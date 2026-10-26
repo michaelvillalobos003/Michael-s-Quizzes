@@ -264,10 +264,14 @@ router.post('/:id/submit', async (req, res) => {
         correctCount++;
       }
 
+      const chosenChoice = qChoices.find(c => c.id === chosenChoiceId);
+      const chosenChoiceText = chosenChoice ? chosenChoice.choice_text : null;
+
       detailedResults.push({
         question_id: q.id,
         question_text: q.question_text,
         chosen_choice_id: chosenChoiceId,
+        selected_choice_text: chosenChoiceText,
         correct_choice_id: correctChoice ? correctChoice.id : null,
         correct_choice_text: correctChoice ? correctChoice.choice_text : '',
         is_correct: isCorrect
@@ -350,9 +354,67 @@ router.post('/:id/submit', async (req, res) => {
       });
     }
 
+    // Check completion rule: Abandoned or unfinished sessions must NEVER be written to the database
+    const isCompleted = answerList.length >= totalQuestions && totalQuestions > 0;
+    let attemptId = null;
+
+    if (isCompleted) {
+      if (db.isPostgres()) {
+        const pool = db.getPool();
+        const attemptRes = await pool.query(
+          `INSERT INTO attempts (user_id, quiz_id, score, total_questions, percentage, cash_earned, completed_at)
+           VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
+           RETURNING id`,
+          [targetUserId, quizId, correctCount, totalQuestions, accuracyPercentage, cashEarned]
+        );
+        attemptId = attemptRes.rows[0].id;
+
+        for (const detail of detailedResults) {
+          await pool.query(
+            `INSERT INTO attempt_answers (attempt_id, question_id, question_text_snapshot, selected_choice_text_snapshot, correct_choice_text_snapshot, is_correct)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [
+              attemptId,
+              detail.question_id,
+              detail.question_text,
+              detail.selected_choice_text || '(No Answer / Skipped)',
+              detail.correct_choice_text,
+              detail.is_correct
+            ]
+          );
+        }
+      } else {
+        attemptId = memStore.counters.attempts++;
+        memStore.attempts.push({
+          id: attemptId,
+          user_id: targetUserId,
+          quiz_id: quizId,
+          score: correctCount,
+          total_questions: totalQuestions,
+          percentage: accuracyPercentage,
+          cash_earned: cashEarned,
+          completed_at: new Date()
+        });
+
+        for (const detail of detailedResults) {
+          memStore.attempt_answers.push({
+            id: memStore.counters.attempt_answers++,
+            attempt_id: attemptId,
+            question_id: detail.question_id,
+            question_text_snapshot: detail.question_text,
+            selected_choice_text_snapshot: detail.selected_choice_text || '(No Answer / Skipped)',
+            correct_choice_text_snapshot: detail.correct_choice_text,
+            is_correct: detail.is_correct,
+            created_at: new Date()
+          });
+        }
+      }
+    }
+
     return res.json({
       success: true,
       message: isPerfect ? '🏆 Perfect Score! Bonus Cash Awarded!' : 'Quiz completed successfully!',
+      attempt_id: attemptId,
       quiz_id: quiz.id,
       quiz_title: quiz.title,
       is_daily_challenge: isDaily,

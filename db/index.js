@@ -22,12 +22,16 @@ export const memStore = {
   questions: [],
   choices: [],
   submissions: [],
+  attempts: [],
+  attempt_answers: [],
   counters: {
     users: 2,
     quizzes: 1,
     questions: 1,
     choices: 1,
-    submissions: 1
+    submissions: 1,
+    attempts: 1,
+    attempt_answers: 1
   }
 };
 
@@ -112,6 +116,32 @@ async function initPostgresTables() {
         cash_earned NUMERIC NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS attempts (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        quiz_id INTEGER REFERENCES quizzes(id) ON DELETE CASCADE,
+        score INTEGER NOT NULL,
+        total_questions INTEGER NOT NULL,
+        percentage NUMERIC NOT NULL,
+        cash_earned NUMERIC DEFAULT 0,
+        completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS attempt_answers (
+        id SERIAL PRIMARY KEY,
+        attempt_id INTEGER REFERENCES attempts(id) ON DELETE CASCADE,
+        question_id INTEGER,
+        question_text_snapshot TEXT NOT NULL,
+        selected_choice_text_snapshot TEXT,
+        correct_choice_text_snapshot TEXT NOT NULL,
+        is_correct BOOLEAN NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      -- Ensure creator_user_id and status columns exist on quizzes
+      ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS creator_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
+      ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'Approved';
 
       -- Ensure default demo user exists
       INSERT INTO users (id, username, email, balance)
