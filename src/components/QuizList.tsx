@@ -95,6 +95,19 @@ export const QuizList: React.FC<QuizListProps> = ({
             Track high scores, beat the timer, or build your own quiz challenge in seconds!
           </p>
           <div className="flex flex-wrap gap-3">
+            <a
+              href="/quiz-take.html?daily=true"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 hover:translate-y-[-1px]"
+            >
+              <span>🔥 Play Daily Challenge ($50/Q)</span>
+            </a>
+            <a
+              href="/quiz-take.html?id=1"
+              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-2 hover:translate-y-[-1px]"
+            >
+              <Play className="w-4 h-4 fill-white" />
+              <span>Take Kid/Teen Quizzes</span>
+            </a>
             <button
               onClick={() => {
                 if (quizzes.length > 0) {
@@ -102,17 +115,16 @@ export const QuizList: React.FC<QuizListProps> = ({
                   onStartQuiz(random);
                 }
               }}
-              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-2 hover:translate-y-[-1px]"
+              className="px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700 font-semibold text-sm transition-all flex items-center gap-2"
             >
-              <Play className="w-4 h-4 fill-white" />
-              Surprise Me (Random Quiz)
+              Surprise Me
             </button>
             <button
               onClick={onCreateNew}
-              className="px-5 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700 font-semibold text-sm transition-all flex items-center gap-2"
+              className="px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700 font-semibold text-sm transition-all flex items-center gap-2"
             >
               <PenTool className="w-4 h-4" />
-              Build a Custom Quiz
+              Build Quiz
             </button>
           </div>
         </div>
