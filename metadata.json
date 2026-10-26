@@ -1,0 +1,8 @@
+{
+  "name": "Michael's Quizzes",
+  "description": "Interactive quiz and trivia platform with custom quiz creator, category browsing, timed challenges, and detailed performance insights.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
