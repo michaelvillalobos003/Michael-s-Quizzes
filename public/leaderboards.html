@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leaderboards • Michael's Quizzes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .tab-btn.active {
+      background-color: #4f46e5;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="/index.html" class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors" title="Back to Quizzes">
+          ←
+        </a>
+        <div>
+          <h1 class="font-extrabold text-base sm:text-lg text-white leading-tight">Michael's Quizzes</h1>
+          <div class="text-xs text-amber-400 font-semibold flex items-center gap-1.5">
+            <span>🏆 Official Leaderboards</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-3">
+        <a href="/history.html" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold transition-colors hidden sm:flex items-center gap-1.5">
+          <span>📜 History</span>
+        </a>
+
+        <a href="/admin.html" class="px-3 py-1.5 rounded-xl bg-violet-950/60 hover:bg-violet-900/60 text-violet-300 hover:text-white border border-violet-800/50 text-xs font-semibold transition-colors flex items-center gap-1.5">
+          <span>⚙️ Admin Tools</span>
+        </a>
+
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold">
+          <span class="text-slate-400">Cash:</span>
+          <span id="header-balance" class="font-extrabold text-emerald-400">$0</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-8 space-y-6">
+    <!-- Hero / Title -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      <div>
+        <h2 class="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+          <span>🏆 Hall of Fame & Rankings</span>
+        </h2>
+        <p class="text-slate-400 text-xs sm:text-sm mt-0.5">
+          Top earners, trivia masters, and high score records across all quizzes.
+        </p>
+      </div>
+
+      <!-- 3 Tabs Switcher -->
+      <div class="flex items-center p-1 rounded-xl bg-slate-900 border border-slate-800 overflow-x-auto self-start md:self-auto">
+        <button
+          id="tab-balance-btn"
+          class="tab-btn active px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5"
+        >
+          <span>💰 Top Balance</span>
+        </button>
+        <button
+          id="tab-overall-btn"
+          class="tab-btn px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition-all whitespace-nowrap flex items-center gap-1.5"
+        >
+          <span>🎯 Most Completed</span>
+        </button>
+        <button
+          id="tab-quiz-btn"
+          class="tab-btn px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition-all whitespace-nowrap flex items-center gap-1.5"
+        >
+          <span>⭐ Per-Quiz Records</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 1: Top Balance Leaderboard -->
+    <div id="tab-balance-content" class="space-y-4">
+      <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+        <span>Ranked strictly by current virtual cash holdings</span>
+        <span class="text-emerald-400 font-semibold">Top Earners</span>
+      </div>
+
+      <div id="balance-loading" class="text-center py-16">
+        <div class="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+        <p class="text-slate-400 text-xs">Loading balance rankings...</p>
+      </div>
+
+      <div id="balance-table-container" class="hidden rounded-3xl bg-slate-900 border border-slate-800 overflow-hidden shadow-xl">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-950/60 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800">
+            <tr>
+              <th class="py-3.5 px-4 w-16 text-center">Rank</th>
+              <th class="py-3.5 px-4">Player</th>
+              <th class="py-3.5 px-4 text-center">Role</th>
+              <th class="py-3.5 px-4 text-right">Cash Balance</th>
+            </tr>
+          </thead>
+          <tbody id="balance-tbody" class="divide-y divide-slate-800/60">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 2: Overall Completed Leaderboard -->
+    <div id="tab-overall-content" class="hidden space-y-4">
+      <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+        <span>Ranked by number of finished 10-question quizzes</span>
+        <span class="text-indigo-400 font-semibold">Most Dedicated</span>
+      </div>
+
+      <div id="overall-loading" class="text-center py-16">
+        <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+        <p class="text-slate-400 text-xs">Loading overall attempts rankings...</p>
+      </div>
+
+      <div id="overall-table-container" class="hidden rounded-3xl bg-slate-900 border border-slate-800 overflow-hidden shadow-xl">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-950/60 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800">
+            <tr>
+              <th class="py-3.5 px-4 w-16 text-center">Rank</th>
+              <th class="py-3.5 px-4">Player</th>
+              <th class="py-3.5 px-4 text-center">Completed Runs</th>
+              <th class="py-3.5 px-4 text-center">Avg. Accuracy</th>
+              <th class="py-3.5 px-4 text-right">Total Cash Won</th>
+            </tr>
+          </thead>
+          <tbody id="overall-tbody" class="divide-y divide-slate-800/60">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 3: Per-Quiz High Scores Leaderboard -->
+    <div id="tab-quiz-content" class="hidden space-y-4">
+      <!-- Quiz Dropdown Selector -->
+      <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Select Quiz Leaderboard:</label>
+          <div class="text-[11px] text-slate-400">View high scores and attempt counts for a specific challenge.</div>
+        </div>
+
+        <select
+          id="quiz-selector"
+          class="px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 max-w-xs w-full"
+        >
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+
+      <!-- Quiz Banner Header -->
+      <div id="quiz-banner" class="p-5 rounded-2xl bg-gradient-to-r from-indigo-950/80 via-slate-900 to-slate-900 border border-indigo-900/40 flex items-center justify-between">
+        <div>
+          <span id="quiz-banner-category" class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Gaming</span>
+          <h3 id="quiz-banner-title" class="text-lg font-bold text-white">Video Games & Metaverse</h3>
+        </div>
+        <a id="play-selected-quiz-btn" href="/quiz-take.html?id=1" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-all shadow-md shadow-indigo-600/20">
+          Play This Quiz
+        </a>
+      </div>
+
+      <div id="quiz-loading" class="text-center py-16">
+        <div class="w-10 h-10 border-4 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+        <p class="text-slate-400 text-xs">Loading quiz rankings...</p>
+      </div>
+
+      <div id="quiz-table-container" class="hidden rounded-3xl bg-slate-900 border border-slate-800 overflow-hidden shadow-xl">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-950/60 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800">
+            <tr>
+              <th class="py-3.5 px-4 w-16 text-center">Rank</th>
+              <th class="py-3.5 px-4">Player</th>
+              <th class="py-3.5 px-4 text-center">Best Score</th>
+              <th class="py-3.5 px-4 text-center">Accuracy</th>
+              <th class="py-3.5 px-4 text-right">Quiz Attempts</th>
+            </tr>
+          </thead>
+          <tbody id="quiz-tbody" class="divide-y divide-slate-800/60">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <div id="quiz-empty" class="hidden text-center py-12 p-6 rounded-2xl bg-slate-900/40 border border-slate-800 text-slate-400 text-xs">
+        No completed attempts recorded yet for this quiz. Be the first to claim Rank #1!
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/leaderboards.js"></script>
+</body>
+</html>

@@ -651,6 +651,31 @@ export async function seedQuizzes() {
 
   console.log(`[Seed - Memory] Seeded ${memStore.quizzes.length} quizzes, ${memStore.questions.length} questions, ${memStore.choices.length} choices into in-memory store.`);
 
+  if (memStore.attempts.length === 0) {
+    const sampleAttempts = [
+      { user_id: 1, quiz_id: 1, score: 10, total_questions: 10, percentage: 100, cash_earned: 125, completed_at: new Date(Date.now() - 3600000 * 4) },
+      { user_id: 1, quiz_id: 6, score: 10, total_questions: 10, percentage: 100, cash_earned: 650, completed_at: new Date(Date.now() - 3600000 * 2) },
+      { user_id: 2, quiz_id: 1, score: 10, total_questions: 10, percentage: 100, cash_earned: 125, completed_at: new Date(Date.now() - 3600000 * 12) },
+      { user_id: 2, quiz_id: 2, score: 9, total_questions: 10, percentage: 90, cash_earned: 90, completed_at: new Date(Date.now() - 3600000 * 8) },
+      { user_id: 2, quiz_id: 3, score: 8, total_questions: 10, percentage: 80, cash_earned: 80, completed_at: new Date(Date.now() - 3600000 * 5) },
+      { user_id: 3, quiz_id: 1, score: 9, total_questions: 10, percentage: 90, cash_earned: 90, completed_at: new Date(Date.now() - 3600000 * 16) },
+      { user_id: 3, quiz_id: 4, score: 10, total_questions: 10, percentage: 100, cash_earned: 125, completed_at: new Date(Date.now() - 3600000 * 10) },
+      { user_id: 3, quiz_id: 5, score: 9, total_questions: 10, percentage: 90, cash_earned: 90, completed_at: new Date(Date.now() - 3600000 * 3) },
+      { user_id: 4, quiz_id: 1, score: 8, total_questions: 10, percentage: 80, cash_earned: 80, completed_at: new Date(Date.now() - 3600000 * 20) },
+      { user_id: 4, quiz_id: 2, score: 10, total_questions: 10, percentage: 100, cash_earned: 125, completed_at: new Date(Date.now() - 3600000 * 14) },
+      { user_id: 5, quiz_id: 1, score: 7, total_questions: 10, percentage: 70, cash_earned: 70, completed_at: new Date(Date.now() - 3600000 * 24) },
+      { user_id: 6, quiz_id: 1, score: 6, total_questions: 10, percentage: 60, cash_earned: 60, completed_at: new Date(Date.now() - 3600000 * 30) }
+    ];
+
+    for (const a of sampleAttempts) {
+      memStore.attempts.push({
+        id: memStore.counters.attempts++,
+        ...a
+      });
+    }
+    console.log(`[Seed - Memory] Seeded ${sampleAttempts.length} sample attempts for leaderboards.`);
+  }
+
   // If connected to PostgreSQL, seed into database tables
   if (db.isPostgres()) {
     const pool = db.getPool();

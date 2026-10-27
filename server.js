@@ -5,6 +5,8 @@ import { fileURLToPath } from 'url';
 import quizzesRouter from './routes/quizzes.js';
 import usersRouter from './routes/users.js';
 import attemptsRouter from './routes/attempts.js';
+import leaderboardsRouter from './routes/leaderboards.js';
+import adminRouter from './routes/admin.js';
 import { seedQuizzes } from './db/seed-quizzes.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -16,13 +18,15 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// 1. Serve public static assets (quiz-take.html, js, login.html, history.html, etc.)
+// 1. Serve public static assets (quiz-take.html, js, login.html, history.html, leaderboards.html, admin.html, etc.)
 app.use(express.static(path.join(__dirname, 'public')));
 
 // 2. API Endpoints
 app.use('/api/quizzes', quizzesRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/attempts', attemptsRouter);
+app.use('/api/leaderboards', leaderboardsRouter);
+app.use('/api/admin', adminRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
