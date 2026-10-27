@@ -63,6 +63,14 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="hidden sm:inline">Stats</span>
           </button>
 
+          <a
+            href="/history.html"
+            className="px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all duration-200 flex items-center gap-1.5"
+          >
+            <span>📜</span>
+            <span className="hidden sm:inline">My History</span>
+          </a>
+
           <button
             onClick={() => onNavigate('create')}
             className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-1.5 ${
