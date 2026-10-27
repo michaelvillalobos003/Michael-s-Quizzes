@@ -468,4 +468,126 @@ router.post('/quizzes/:id/batch-import', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/admin/pending-quizzes
+ * Educator Review Queue: Returns pending student quizzes awaiting teacher approval
+ */
+router.get('/pending-quizzes', async (req, res) => {
+  try {
+    if (db.isPostgres()) {
+      const pool = db.getPool();
+      const result = await pool.query(`
+        SELECT 
+          q.id,
+          q.title,
+          q.description,
+          q.category,
+          q.difficulty,
+          q.status,
+          q.is_approved,
+          q.rejection_feedback,
+          q.created_at,
+          q.creator_user_id,
+          u.username AS creator_username,
+          (SELECT COUNT(*) FROM questions qu WHERE qu.quiz_id = q.id) AS question_count
+        FROM quizzes q
+        LEFT JOIN users u ON q.creator_user_id = u.id
+        WHERE q.status = 'Pending' OR (q.is_approved = false AND (q.status IS NULL OR q.status = 'Pending'))
+        ORDER BY q.created_at ASC
+      `);
+      return res.json({ success: true, pending_quizzes: result.rows });
+    }
+
+    // In-memory fallback
+    const list = memStore.quizzes
+      .filter(q => q.status === 'Pending' || (!q.is_approved && (!q.status || q.status === 'Pending')))
+      .map(q => {
+        const creator = memStore.users.find(u => u.id === q.creator_user_id);
+        return {
+          ...q,
+          creator_username: creator ? creator.username : 'Student',
+          question_count: memStore.questions.filter(qu => qu.quiz_id === q.id).length
+        };
+      });
+
+    return res.json({ success: true, pending_quizzes: list });
+  } catch (err) {
+    console.error('Error fetching pending quizzes:', err);
+    res.status(500).json({ success: false, error: 'Failed to load educator review queue' });
+  }
+});
+
+/**
+ * POST /api/admin/quizzes/:id/approve
+ * Approves and publishes the quiz to the public catalog, permanently locking student editing
+ */
+router.post('/quizzes/:id/approve', async (req, res) => {
+  const quizId = parseInt(req.params.id, 10);
+  if (isNaN(quizId)) return res.status(400).json({ success: false, error: 'Invalid quiz ID' });
+
+  try {
+    if (db.isPostgres()) {
+      const pool = db.getPool();
+      await pool.query(
+        `UPDATE quizzes 
+         SET status = 'Approved', is_approved = true, rejection_feedback = NULL 
+         WHERE id = $1`,
+        [quizId]
+      );
+    } else {
+      const quiz = memStore.quizzes.find(q => q.id === quizId);
+      if (!quiz) return res.status(404).json({ success: false, error: 'Quiz not found' });
+      quiz.status = 'Approved';
+      quiz.is_approved = true;
+      quiz.rejection_feedback = null;
+    }
+
+    return res.json({
+      success: true,
+      message: `Quiz #${quizId} approved and published to public catalog! Student editing is now permanently locked.`
+    });
+  } catch (err) {
+    console.error(`Error approving quiz ${quizId}:`, err);
+    res.status(500).json({ success: false, error: 'Failed to approve quiz' });
+  }
+});
+
+/**
+ * POST /api/admin/quizzes/:id/reject
+ * Rejects the quiz and records educator feedback notes so student can edit and resubmit
+ */
+router.post('/quizzes/:id/reject', async (req, res) => {
+  const quizId = parseInt(req.params.id, 10);
+  const { feedback } = req.body;
+  if (isNaN(quizId)) return res.status(400).json({ success: false, error: 'Invalid quiz ID' });
+
+  const notes = (feedback || '').trim() || 'Please review and improve question quality before resubmitting.';
+
+  try {
+    if (db.isPostgres()) {
+      const pool = db.getPool();
+      await pool.query(
+        `UPDATE quizzes 
+         SET status = 'Rejected', is_approved = false, rejection_feedback = $1 
+         WHERE id = $2`,
+        [notes, quizId]
+      );
+    } else {
+      const quiz = memStore.quizzes.find(q => q.id === quizId);
+      if (!quiz) return res.status(404).json({ success: false, error: 'Quiz not found' });
+      quiz.status = 'Rejected';
+      quiz.is_approved = false;
+      quiz.rejection_feedback = notes;
+    }
+
+    return res.json({
+      success: true,
+      message: `Quiz #${quizId} marked as Rejected with feedback provided to the student creator.`
+    });
+  } catch (err) {
+    console.error(`Error rejecting quiz ${quizId}:`, err);
+    res.status(500).json({ success: false, error: 'Failed to reject quiz' });
+  }
+});
+
 export default router;

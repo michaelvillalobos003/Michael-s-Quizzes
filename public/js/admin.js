@@ -52,6 +52,19 @@
   const csvInvalidBadge = document.getElementById('csv-invalid-badge');
   const confirmImportBtn = document.getElementById('confirm-import-btn');
 
+  // Educator Review Queue Elements
+  const pendingQueueBadge = document.getElementById('pending-queue-badge');
+  const pendingQueueLoading = document.getElementById('pending-queue-loading');
+  const pendingQueueEmpty = document.getElementById('pending-queue-empty');
+  const pendingQueueList = document.getElementById('pending-queue-list');
+  const rejectModal = document.getElementById('reject-feedback-modal');
+  const rejectModalQuizTitle = document.getElementById('reject-modal-quiz-title');
+  const rejectFeedbackInput = document.getElementById('reject-feedback-input');
+  const cancelRejectModalBtn = document.getElementById('cancel-reject-modal-btn');
+  const closeRejectModalBtn = document.getElementById('close-reject-modal-btn');
+  const confirmRejectBtn = document.getElementById('confirm-reject-btn');
+  let pendingRejectQuizId = null;
+
   let quizzes = [];
   let parsedCsvRows = [];
 
@@ -99,6 +112,7 @@
         accessDeniedView.classList.add('hidden');
         adminDashboardView.classList.remove('hidden');
         loadQuizzesDropdowns();
+        loadPendingReviewQueue();
       } else {
         throw new Error(data.error || 'Authorization failed');
       }
@@ -555,6 +569,163 @@ What is the largest ocean on Earth?, Atlantic, Pacific, Indian, Arctic, 2`;
       confirmImportBtn.textContent = `✓ Confirm & Import Valid Rows`;
     }
   });
+
+  // ============================================
+  // 7. Educator Review Queue (Phase 5)
+  // ============================================
+  async function loadPendingReviewQueue() {
+    if (!pendingQueueList) return;
+    pendingQueueLoading.classList.remove('hidden');
+    pendingQueueEmpty.classList.add('hidden');
+    pendingQueueList.innerHTML = '';
+
+    try {
+      const res = await fetch('/api/admin/pending-quizzes', {
+        headers: getHeaders()
+      });
+      const data = await res.json();
+      pendingQueueLoading.classList.add('hidden');
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to load pending queue');
+      }
+
+      const pendingList = data.quizzes || data.pending_quizzes || [];
+      pendingQueueBadge.textContent = `${pendingList.length} Pending`;
+
+      if (pendingList.length === 0) {
+        pendingQueueEmpty.classList.remove('hidden');
+        return;
+      }
+
+      pendingList.forEach(q => {
+        const item = document.createElement('div');
+        item.className = 'p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3';
+        const formattedDate = q.created_at ? new Date(q.created_at).toLocaleDateString() : 'Recent';
+        
+        item.innerHTML = `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  Pending Verification
+                </span>
+                <span class="text-xs text-slate-400 font-medium">${escapeHtml(q.category || 'General')}</span>
+                <span class="text-slate-600 text-xs">•</span>
+                <span class="text-xs text-slate-400">${formattedDate}</span>
+              </div>
+              <h4 class="text-base font-bold text-white">${escapeHtml(q.title)}</h4>
+              <p class="text-xs text-slate-300">${escapeHtml(q.description || 'No description provided.')}</p>
+              <div class="flex items-center gap-3 pt-1 text-xs text-slate-400">
+                <span>👤 Student Author: <strong class="text-emerald-400">${escapeHtml(q.creator_username || 'Student #' + q.creator_user_id)}</strong></span>
+                <span>•</span>
+                <span>📝 ${q.question_count || 10} Questions</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 self-end sm:self-center">
+              <button
+                class="approve-quiz-btn px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/30 transition-all flex items-center gap-1.5"
+                data-id="${q.id}"
+                data-title="${escapeHtml(q.title)}"
+              >
+                <span>✓</span>
+                <span>Approve & Publish</span>
+              </button>
+              <button
+                class="reject-quiz-btn px-4 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 text-xs font-bold transition-all flex items-center gap-1.5"
+                data-id="${q.id}"
+                data-title="${escapeHtml(q.title)}"
+              >
+                <span>✗</span>
+                <span>Reject with Notes</span>
+              </button>
+            </div>
+          </div>
+        `;
+        pendingQueueList.appendChild(item);
+      });
+
+      // Attach Approve handlers
+      pendingQueueList.querySelectorAll('.approve-quiz-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const quizId = btn.getAttribute('data-id');
+          const title = btn.getAttribute('data-title');
+          if (!confirm(`Approve and publish "${title}" to the public catalog?\n\nThis will permanently lock student editing.`)) return;
+          try {
+            const res = await fetch(`/api/admin/quizzes/${quizId}/approve`, {
+              method: 'POST',
+              headers: getHeaders()
+            });
+            const d = await res.json();
+            if (!res.ok || !d.success) throw new Error(d.error);
+            alert(`🎉 "${title}" has been approved and published to the public catalog!`);
+            loadPendingReviewQueue();
+            loadQuizzesDropdowns();
+          } catch (err) {
+            alert(`Approve failed: ${err.message}`);
+          }
+        });
+      });
+
+      // Attach Reject handlers
+      pendingQueueList.querySelectorAll('.reject-quiz-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          pendingRejectQuizId = btn.getAttribute('data-id');
+          const title = btn.getAttribute('data-title');
+          rejectModalQuizTitle.textContent = `Quiz: "${title}" (ID: #${pendingRejectQuizId})`;
+          rejectFeedbackInput.value = '';
+          rejectModal.classList.remove('hidden');
+          rejectFeedbackInput.focus();
+        });
+      });
+
+    } catch (err) {
+      pendingQueueLoading.classList.add('hidden');
+      pendingQueueList.innerHTML = `<div class="p-4 rounded-xl bg-rose-950/40 border border-rose-800 text-rose-300 text-xs">Error loading pending queue: ${escapeHtml(err.message)}</div>`;
+    }
+  }
+
+  // Reject Modal Close & Confirm
+  if (closeRejectModalBtn) {
+    closeRejectModalBtn.addEventListener('click', () => {
+      rejectModal.classList.add('hidden');
+    });
+  }
+  if (cancelRejectModalBtn) {
+    cancelRejectModalBtn.addEventListener('click', () => {
+      rejectModal.classList.add('hidden');
+    });
+  }
+  if (confirmRejectBtn) {
+    confirmRejectBtn.addEventListener('click', async () => {
+      if (!pendingRejectQuizId) return;
+      const feedback = rejectFeedbackInput.value.trim();
+      if (!feedback) {
+        alert('Please provide feedback notes explaining what the student needs to fix.');
+        return;
+      }
+      confirmRejectBtn.disabled = true;
+      confirmRejectBtn.textContent = 'Submitting...';
+      try {
+        const res = await fetch(`/api/admin/quizzes/${pendingRejectQuizId}/reject`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({ feedback })
+        });
+        const d = await res.json();
+        if (!res.ok || !d.success) throw new Error(d.error);
+        alert(`Quiz #${pendingRejectQuizId} rejected. Feedback notes have been recorded for the student to edit & resubmit.`);
+        rejectModal.classList.add('hidden');
+        confirmRejectBtn.disabled = false;
+        confirmRejectBtn.textContent = 'Confirm Rejection';
+        loadPendingReviewQueue();
+      } catch (err) {
+        alert(`Rejection error: ${err.message}`);
+        confirmRejectBtn.disabled = false;
+        confirmRejectBtn.textContent = 'Confirm Rejection';
+      }
+    });
+  }
 
   function escapeHtml(text) {
     if (!text) return '';

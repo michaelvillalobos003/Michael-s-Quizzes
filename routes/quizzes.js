@@ -28,10 +28,10 @@ router.get('/', async (req, res) => {
     if (db.isPostgres()) {
       const pool = db.getPool();
       const result = await pool.query(`
-        SELECT id, title, description, category, difficulty, is_approved, is_daily_challenge, created_at,
+        SELECT id, title, description, category, difficulty, is_approved, is_daily_challenge, status, created_at,
           (SELECT COUNT(*) FROM questions q WHERE q.quiz_id = quizzes.id) AS question_count
         FROM quizzes
-        WHERE is_approved = true AND is_daily_challenge = false
+        WHERE is_approved = true AND (status = 'Approved' OR status IS NULL) AND is_daily_challenge = false
         ORDER BY id ASC
       `);
       return res.json({ success: true, quizzes: result.rows });
@@ -39,7 +39,7 @@ router.get('/', async (req, res) => {
 
     // In-memory fallback
     const list = memStore.quizzes
-      .filter(q => q.is_approved && !q.is_daily_challenge)
+      .filter(q => q.is_approved && (!q.status || q.status === 'Approved') && !q.is_daily_challenge)
       .map(q => {
         const questionCount = memStore.questions.filter(qu => qu.quiz_id === q.id).length;
         return {
@@ -434,6 +434,357 @@ router.post('/:id/submit', async (req, res) => {
   } catch (err) {
     console.error(`Error submitting quiz ${quizId}:`, err);
     res.status(500).json({ success: false, error: 'Internal server error evaluating quiz submission' });
+  }
+});
+
+/**
+ * POST /api/quizzes/create-student-quiz
+ * Allows students to build a 10-question quiz with 4 choices per question and 1 correct choice.
+ * Sets status = 'Pending' and is_approved = false (isolates from public catalog).
+ */
+router.post('/create-student-quiz', async (req, res) => {
+  const userId = req.headers['x-user-id'] 
+    ? parseInt(req.headers['x-user-id'], 10) 
+    : req.body.user_id 
+    ? parseInt(req.body.user_id, 10) 
+    : 1;
+
+  const { title, description, category, difficulty, questions } = req.body;
+
+  if (!title || !category || !Array.isArray(questions) || questions.length === 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid payload: title, category, and questions array are required'
+    });
+  }
+
+  // Validate each question
+  for (let i = 0; i < questions.length; i++) {
+    const q = questions[i];
+    if (!q.question_text || !q.question_text.trim()) {
+      return res.status(400).json({ success: false, error: `Question #${i + 1} is missing question prompt` });
+    }
+    if (!Array.isArray(q.choices) || q.choices.length !== 4) {
+      return res.status(400).json({ success: false, error: `Question #${i + 1} must have exactly 4 choices` });
+    }
+    const correctCount = q.choices.filter(c => Boolean(c.is_correct)).length;
+    if (correctCount !== 1) {
+      return res.status(400).json({ success: false, error: `Question #${i + 1} must have exactly 1 correct choice selected` });
+    }
+  }
+
+  try {
+    if (db.isPostgres()) {
+      const pool = db.getPool();
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+
+        const quizRes = await client.query(
+          `INSERT INTO quizzes (title, description, category, difficulty, is_approved, is_daily_challenge, status, creator_user_id, rejection_feedback)
+           VALUES ($1, $2, $3, $4, false, false, 'Pending', $5, NULL)
+           RETURNING id`,
+          [title.trim(), (description || '').trim(), category.trim(), difficulty || 'medium', userId]
+        );
+        const quizId = quizRes.rows[0].id;
+
+        for (let i = 0; i < questions.length; i++) {
+          const q = questions[i];
+          const qRes = await client.query(
+            `INSERT INTO questions (quiz_id, question_text, order_num) VALUES ($1, $2, $3) RETURNING id`,
+            [quizId, q.question_text.trim(), i + 1]
+          );
+          const questionId = qRes.rows[0].id;
+
+          for (const c of q.choices) {
+            await client.query(
+              `INSERT INTO choices (question_id, choice_text, is_correct) VALUES ($1, $2, $3)`,
+              [questionId, (c.choice_text || '').trim(), Boolean(c.is_correct)]
+            );
+          }
+        }
+
+        await client.query('COMMIT');
+        return res.json({
+          success: true,
+          message: 'Quiz submitted successfully! Status is set to Pending awaiting educator review.',
+          quiz_id: quizId,
+          status: 'Pending'
+        });
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
+    }
+
+    // In-memory fallback
+    const quizId = memStore.counters.quizzes++;
+    memStore.quizzes.push({
+      id: quizId,
+      title: title.trim(),
+      description: (description || '').trim(),
+      category: category.trim(),
+      difficulty: difficulty || 'medium',
+      is_approved: false,
+      is_daily_challenge: false,
+      status: 'Pending',
+      creator_user_id: userId,
+      rejection_feedback: null,
+      created_at: new Date()
+    });
+
+    questions.forEach((q, idx) => {
+      const qId = memStore.counters.questions++;
+      memStore.questions.push({
+        id: qId,
+        quiz_id: quizId,
+        question_text: q.question_text.trim(),
+        order_num: idx + 1
+      });
+
+      q.choices.forEach(c => {
+        memStore.choices.push({
+          id: memStore.counters.choices++,
+          question_id: qId,
+          choice_text: (c.choice_text || '').trim(),
+          is_correct: Boolean(c.is_correct)
+        });
+      });
+    });
+
+    return res.json({
+      success: true,
+      message: 'Quiz submitted successfully! Status is set to Pending awaiting educator review.',
+      quiz_id: quizId,
+      status: 'Pending'
+    });
+  } catch (err) {
+    console.error('Error creating student quiz:', err);
+    res.status(500).json({ success: false, error: 'Failed to create student quiz' });
+  }
+});
+
+/**
+ * GET /api/quizzes/:id/edit-details
+ * Pre-loads rejected quizzes with prior data for editing and validates creator permissions.
+ * Rule: Approved quizzes are permanently locked from student editing.
+ */
+router.get('/:id/edit-details', async (req, res) => {
+  const quizId = parseInt(req.params.id, 10);
+  const userId = req.headers['x-user-id'] ? parseInt(req.headers['x-user-id'], 10) : 1;
+
+  if (isNaN(quizId)) return res.status(400).json({ success: false, error: 'Invalid quiz ID' });
+
+  try {
+    let quiz = null;
+    let questions = [];
+
+    if (db.isPostgres()) {
+      const pool = db.getPool();
+      const qRes = await pool.query('SELECT * FROM quizzes WHERE id = $1', [quizId]);
+      if (qRes.rows.length === 0) return res.status(404).json({ success: false, error: 'Quiz not found' });
+      quiz = qRes.rows[0];
+
+      if (quiz.status === 'Approved') {
+        return res.status(403).json({
+          success: false,
+          error: 'This quiz has already been approved by an educator and is permanently locked from student editing.'
+        });
+      }
+
+      const questionsRes = await pool.query(
+        'SELECT id, quiz_id, question_text, order_num FROM questions WHERE quiz_id = $1 ORDER BY order_num ASC',
+        [quizId]
+      );
+      questions = questionsRes.rows;
+
+      const qIds = questions.map(q => q.id);
+      let choices = [];
+      if (qIds.length > 0) {
+        const cRes = await pool.query('SELECT id, question_id, choice_text, is_correct FROM choices WHERE question_id = ANY($1::int[]) ORDER BY id ASC', [qIds]);
+        choices = cRes.rows;
+      }
+
+      const formatted = questions.map(q => ({
+        id: q.id,
+        question_text: q.question_text,
+        order_num: q.order_num,
+        choices: choices.filter(c => c.question_id === q.id)
+      }));
+
+      return res.json({
+        success: true,
+        quiz: {
+          id: quiz.id,
+          title: quiz.title,
+          description: quiz.description,
+          category: quiz.category,
+          difficulty: quiz.difficulty,
+          status: quiz.status,
+          rejection_feedback: quiz.rejection_feedback,
+          creator_user_id: quiz.creator_user_id,
+          questions: formatted
+        }
+      });
+    }
+
+    // In-memory fallback
+    quiz = memStore.quizzes.find(q => q.id === quizId);
+    if (!quiz) return res.status(404).json({ success: false, error: 'Quiz not found' });
+
+    if (quiz.status === 'Approved') {
+      return res.status(403).json({
+        success: false,
+        error: 'This quiz has already been approved by an educator and is permanently locked from student editing.'
+      });
+    }
+
+    const qList = memStore.questions
+      .filter(q => q.quiz_id === quizId)
+      .sort((a, b) => a.order_num - b.order_num);
+
+    const formatted = qList.map(q => ({
+      id: q.id,
+      question_text: q.question_text,
+      order_num: q.order_num,
+      choices: memStore.choices.filter(c => c.question_id === q.id)
+    }));
+
+    return res.json({
+      success: true,
+      quiz: {
+        id: quiz.id,
+        title: quiz.title,
+        description: quiz.description,
+        category: quiz.category,
+        difficulty: quiz.difficulty,
+        status: quiz.status,
+        rejection_feedback: quiz.rejection_feedback,
+        creator_user_id: quiz.creator_user_id,
+        questions: formatted
+      }
+    });
+  } catch (err) {
+    console.error(`Error loading edit details for quiz ${quizId}:`, err);
+    res.status(500).json({ success: false, error: 'Failed to retrieve quiz details for editing' });
+  }
+});
+
+/**
+ * PUT /api/quizzes/:id/resubmit
+ * Updates quiz and resets status to 'Pending' (clearing rejection_feedback)
+ */
+router.put('/:id/resubmit', async (req, res) => {
+  const quizId = parseInt(req.params.id, 10);
+  if (isNaN(quizId)) return res.status(400).json({ success: false, error: 'Invalid quiz ID' });
+
+  const { title, description, category, difficulty, questions } = req.body;
+
+  try {
+    if (db.isPostgres()) {
+      const pool = db.getPool();
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+
+        // Verify not locked
+        const checkRes = await client.query('SELECT status FROM quizzes WHERE id = $1', [quizId]);
+        if (checkRes.rows.length === 0) return res.status(404).json({ success: false, error: 'Quiz not found' });
+        if (checkRes.rows[0].status === 'Approved') {
+          return res.status(403).json({ success: false, error: 'Approved quizzes are permanently locked.' });
+        }
+
+        // Update quiz record
+        await client.query(
+          `UPDATE quizzes 
+           SET title = $1, description = $2, category = $3, difficulty = $4, status = 'Pending', is_approved = false, rejection_feedback = NULL
+           WHERE id = $5`,
+          [title.trim(), (description || '').trim(), category.trim(), difficulty || 'medium', quizId]
+        );
+
+        // Delete old questions/choices
+        await client.query('DELETE FROM questions WHERE quiz_id = $1', [quizId]);
+
+        for (let i = 0; i < questions.length; i++) {
+          const q = questions[i];
+          const qRes = await client.query(
+            `INSERT INTO questions (quiz_id, question_text, order_num) VALUES ($1, $2, $3) RETURNING id`,
+            [quizId, q.question_text.trim(), i + 1]
+          );
+          const questionId = qRes.rows[0].id;
+
+          for (const c of q.choices) {
+            await client.query(
+              `INSERT INTO choices (question_id, choice_text, is_correct) VALUES ($1, $2, $3)`,
+              [questionId, (c.choice_text || '').trim(), Boolean(c.is_correct)]
+            );
+          }
+        }
+
+        await client.query('COMMIT');
+        return res.json({
+          success: true,
+          message: 'Quiz resubmitted successfully! It is now pending educator review.',
+          status: 'Pending'
+        });
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
+    }
+
+    // In-memory fallback
+    const quiz = memStore.quizzes.find(q => q.id === quizId);
+    if (!quiz) return res.status(404).json({ success: false, error: 'Quiz not found' });
+    if (quiz.status === 'Approved') {
+      return res.status(403).json({ success: false, error: 'Approved quizzes are permanently locked.' });
+    }
+
+    quiz.title = title.trim();
+    quiz.description = (description || '').trim();
+    quiz.category = category.trim();
+    quiz.difficulty = difficulty || 'medium';
+    quiz.status = 'Pending';
+    quiz.is_approved = false;
+    quiz.rejection_feedback = null;
+
+    // Remove old questions/choices
+    const oldQIds = memStore.questions.filter(q => q.quiz_id === quizId).map(q => q.id);
+    memStore.choices = memStore.choices.filter(c => !oldQIds.includes(c.question_id));
+    memStore.questions = memStore.questions.filter(q => q.quiz_id !== quizId);
+
+    // Re-insert questions/choices
+    questions.forEach((q, idx) => {
+      const qId = memStore.counters.questions++;
+      memStore.questions.push({
+        id: qId,
+        quiz_id: quizId,
+        question_text: q.question_text.trim(),
+        order_num: idx + 1
+      });
+
+      q.choices.forEach(c => {
+        memStore.choices.push({
+          id: memStore.counters.choices++,
+          question_id: qId,
+          choice_text: (c.choice_text || '').trim(),
+          is_correct: Boolean(c.is_correct)
+        });
+      });
+    });
+
+    return res.json({
+      success: true,
+      message: 'Quiz resubmitted successfully! It is now pending educator review.',
+      status: 'Pending'
+    });
+  } catch (err) {
+    console.error(`Error resubmitting quiz ${quizId}:`, err);
+    res.status(500).json({ success: false, error: 'Failed to resubmit quiz' });
   }
 });
 

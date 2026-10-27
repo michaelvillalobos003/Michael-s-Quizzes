@@ -1,0 +1,144 @@
+/* Michael's Quizzes - Modern Dark Slate Aesthetic & Glowing Accents */
+
+:root {
+  --color-canvas: #0f172a;        /* Deep Slate canvas */
+  --color-surface: #1e293b;       /* Card surface */
+  --color-surface-hover: #243248; /* Card surface hover */
+  --color-border: #334155;        /* Card border */
+  --color-border-hover: #475569;  /* Card border hover */
+  
+  /* Glowing accent colors */
+  --accent-emerald: #10b981;
+  --accent-violet: #8b5cf6;
+  --accent-cyan: #06b6d4;
+  --accent-amber: #f59e0b;
+  --accent-rose: #f43f5e;
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: #f8fafc;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+/* Glass & Card Surfaces */
+.slate-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 1.25rem;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slate-card:hover {
+  border-color: var(--color-border-hover);
+}
+
+.slate-card-glow-violet:hover {
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.15), 0 0 15px rgba(139, 92, 246, 0.1);
+}
+
+.slate-card-glow-emerald:hover {
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.15), 0 0 15px rgba(16, 185, 129, 0.1);
+}
+
+.slate-card-glow-cyan:hover {
+  border-color: rgba(6, 182, 212, 0.5);
+  box-shadow: 0 10px 25px -5px rgba(6, 182, 212, 0.15), 0 0 15px rgba(6, 182, 212, 0.1);
+}
+
+/* Bento Grid System */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.25rem;
+}
+
+@media (max-width: 1024px) {
+  .bento-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Glowing Accent Badges */
+.badge-emerald {
+  background-color: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34d399;
+}
+
+.badge-violet {
+  background-color: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  color: #a78bfa;
+}
+
+.badge-cyan {
+  background-color: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  color: #22d3ee;
+}
+
+.badge-amber {
+  background-color: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+}
+
+.badge-rose {
+  background-color: rgba(244, 63, 94, 0.15);
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  color: #fb7185;
+}
+
+/* Status Pills */
+.status-pill-approved {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.status-pill-pending {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.status-pill-rejected {
+  background: rgba(244, 63, 94, 0.2);
+  color: #fb7185;
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
