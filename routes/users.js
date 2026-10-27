@@ -3,9 +3,19 @@ import db, { memStore } from '../db/index.js';
 
 const router = Router();
 
+function requireUserId(req, res) {
+  const userId = Number.parseInt(req.headers['x-user-id'], 10);
+  if (!Number.isInteger(userId) || userId < 1) {
+    res.status(401).json({ success: false, error: 'Sign in required' });
+    return null;
+  }
+  return userId;
+}
+
 // GET /api/users/me - Get current user profile and balance
 router.get('/me', async (req, res) => {
-  const userId = req.headers['x-user-id'] ? parseInt(req.headers['x-user-id'], 10) : 1;
+  const userId = requireUserId(req, res);
+  if (!userId) return;
 
   try {
     if (db.isPostgres()) {
@@ -41,7 +51,8 @@ router.get('/me', async (req, res) => {
 
 // GET /api/users/dashboard-stats - For Bento Grid Home Dashboard
 router.get('/dashboard-stats', async (req, res) => {
-  const userId = req.headers['x-user-id'] ? parseInt(req.headers['x-user-id'], 10) : 1;
+  const userId = requireUserId(req, res);
+  if (!userId) return;
 
   try {
     let user = null;
@@ -145,7 +156,8 @@ router.get('/dashboard-stats', async (req, res) => {
 
 // POST /api/users/claim-daily-bonus - Claim +$50 daily streak bonus
 router.post('/claim-daily-bonus', async (req, res) => {
-  const userId = req.headers['x-user-id'] ? parseInt(req.headers['x-user-id'], 10) : 1;
+  const userId = requireUserId(req, res);
+  if (!userId) return;
   const now = new Date();
 
   try {
@@ -220,8 +232,13 @@ router.post('/claim-daily-bonus', async (req, res) => {
 // POST /api/users/login - Simple login or switch user
 router.post('/login', async (req, res) => {
   const { username, email } = req.body;
-  const cleanUsername = (username || 'Michael').trim();
-  const cleanEmail = (email || `${cleanUsername.toLowerCase()}@example.com`).trim();
+  const cleanUsername = typeof username === 'string' ? username.trim() : '';
+  if (!cleanUsername) {
+    return res.status(400).json({ success: false, error: 'Username is required' });
+  }
+  const cleanEmail = typeof email === 'string' && email.trim()
+    ? email.trim()
+    : `${cleanUsername.toLowerCase()}@example.com`;
 
   try {
     if (db.isPostgres()) {

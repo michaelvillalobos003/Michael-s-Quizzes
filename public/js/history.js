@@ -16,7 +16,8 @@
   }
 
   // Redirect guests to login
-  if (!currentUser) {
+  if (!currentUser || !Number.isInteger(Number(currentUser.id)) || Number(currentUser.id) < 1) {
+    localStorage.removeItem('quiz_user');
     window.location.href = `/login.html?redirect=${encodeURIComponent(window.location.href)}`;
     return;
   }
@@ -53,7 +54,7 @@
   const modalDoneBtn = document.getElementById('modal-done-btn');
 
   // Initialize Header
-  headerUsernameEl.textContent = currentUser.username || 'Michael';
+  headerUsernameEl.textContent = currentUser.username || 'Player';
   headerAvatarEl.textContent = (currentUser.username || 'M').charAt(0).toUpperCase();
   headerBalanceEl.textContent = `$${currentUser.balance || 0}`;
 

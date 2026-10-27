@@ -3,16 +3,23 @@ import db, { memStore } from '../db/index.js';
 
 const router = Router();
 
+function requireUserId(req, res) {
+  const rawUserId = req.headers['x-user-id'] || req.query.user_id;
+  const userId = Number.parseInt(rawUserId, 10);
+  if (!Number.isInteger(userId) || userId < 1) {
+    res.status(401).json({ success: false, error: 'Sign in required' });
+    return null;
+  }
+  return userId;
+}
+
 /**
  * GET /api/attempts/my-history
  * Returns the logged-in user's past completed attempts sorted from newest to oldest
  */
 router.get('/my-history', async (req, res) => {
-  const userId = req.headers['x-user-id'] 
-    ? parseInt(req.headers['x-user-id'], 10) 
-    : req.query.user_id 
-    ? parseInt(req.query.user_id, 10) 
-    : 1;
+  const userId = requireUserId(req, res);
+  if (!userId) return;
 
   try {
     if (db.isPostgres()) {
@@ -176,11 +183,8 @@ router.get('/:id/review', async (req, res) => {
  * Returns user's created quizzes with status badges (Approved, Pending, Draft)
  */
 router.get('/my-created-quizzes', async (req, res) => {
-  const userId = req.headers['x-user-id'] 
-    ? parseInt(req.headers['x-user-id'], 10) 
-    : req.query.user_id 
-    ? parseInt(req.query.user_id, 10) 
-    : 1;
+  const userId = requireUserId(req, res);
+  if (!userId) return;
 
   try {
     if (db.isPostgres()) {

@@ -200,6 +200,10 @@ router.post('/:id/submit', async (req, res) => {
 
   const { answers, user_id } = req.body;
   // answers format: [ { question_id: 1, choice_id: 3 }, ... ] or object { [question_id]: choice_id }
+  const targetUserId = Number.parseInt(req.headers['x-user-id'] || user_id, 10);
+  if (!Number.isInteger(targetUserId) || targetUserId < 1) {
+    return res.status(401).json({ success: false, error: 'Sign in required' });
+  }
 
   if (!answers) {
     return res.status(400).json({ success: false, error: 'Missing answers array in request body' });
@@ -296,8 +300,6 @@ router.post('/:id/submit', async (req, res) => {
       bonusApplied = true;
     }
 
-    // Determine user ID (default to user 1 if not specified)
-    const targetUserId = user_id ? parseInt(user_id, 10) : 1;
     let previousBalance = 0;
     let newBalance = 0;
 
@@ -443,11 +445,11 @@ router.post('/:id/submit', async (req, res) => {
  * Sets status = 'Pending' and is_approved = false (isolates from public catalog).
  */
 router.post('/create-student-quiz', async (req, res) => {
-  const userId = req.headers['x-user-id'] 
-    ? parseInt(req.headers['x-user-id'], 10) 
-    : req.body.user_id 
-    ? parseInt(req.body.user_id, 10) 
-    : 1;
+  const rawUserId = req.headers['x-user-id'] || req.body.user_id;
+  const userId = Number.parseInt(rawUserId, 10);
+  if (!Number.isInteger(userId) || userId < 1) {
+    return res.status(401).json({ success: false, error: 'Sign in required' });
+  }
 
   const { title, description, category, difficulty, questions } = req.body;
 
@@ -573,9 +575,12 @@ router.post('/create-student-quiz', async (req, res) => {
  */
 router.get('/:id/edit-details', async (req, res) => {
   const quizId = parseInt(req.params.id, 10);
-  const userId = req.headers['x-user-id'] ? parseInt(req.headers['x-user-id'], 10) : 1;
+  const userId = Number.parseInt(req.headers['x-user-id'], 10);
 
   if (isNaN(quizId)) return res.status(400).json({ success: false, error: 'Invalid quiz ID' });
+  if (!Number.isInteger(userId) || userId < 1) {
+    return res.status(401).json({ success: false, error: 'Sign in required' });
+  }
 
   try {
     let quiz = null;

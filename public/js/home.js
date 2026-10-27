@@ -2,28 +2,42 @@
 (function () {
   'use strict';
 
-  // Current User State
-  let currentUser = { id: 1, username: 'Michael', role: 'teacher' };
+  // A visitor is a guest unless they explicitly signed in.
+  let currentUser = null;
   const stored = localStorage.getItem('quiz_user');
   if (stored) {
     try {
       const u = JSON.parse(stored);
-      currentUser = { ...currentUser, ...u };
+      if (u && Number.isInteger(Number(u.id)) && Number(u.id) > 0) {
+        currentUser = u;
+      } else {
+        localStorage.removeItem('quiz_user');
+      }
     } catch (e) {
-      console.warn('Could not parse user', e);
+      localStorage.removeItem('quiz_user');
     }
   }
 
   // DOM Elements - Profile & Header
   const headerAvatar = document.getElementById('header-avatar');
   const headerUsername = document.getElementById('header-username');
+  const signUpLink = document.getElementById('sign-up-link');
+  const signOutButton = document.getElementById('sign-out-button');
   const navStreakCount = document.getElementById('nav-streak-count');
   const navBalanceVal = document.getElementById('nav-balance-val');
+  const navStreakPill = document.getElementById('nav-streak-pill');
+  const navBalancePill = document.getElementById('nav-balance-pill');
 
   // DOM Elements - Hero & Bento
   const heroGreetingName = document.getElementById('hero-greeting-name');
+  const heroGreetingPrefix = document.getElementById('hero-greeting-prefix');
   const heroStreakText = document.getElementById('hero-streak-text');
   const heroBalanceVal = document.getElementById('hero-balance-val');
+  const heroStreakBadge = document.getElementById('hero-streak-badge');
+  const heroBalanceCard = document.getElementById('hero-balance-card');
+  const dailyBonusCard = document.getElementById('daily-bonus-card');
+  const quickStatsCard = document.getElementById('quick-stats-card');
+  const recentActivityCard = document.getElementById('recent-activity-card');
 
   // DOM Elements - Bonus Widget
   const claimBonusBtn = document.getElementById('claim-bonus-btn');
@@ -54,21 +68,42 @@
   let timerInterval = null;
 
   function getHeaders() {
-    return {
-      'Content-Type': 'application/json',
-      'x-user-id': String(currentUser.id || 1),
-      'x-user-role': currentUser.role || 'teacher'
-    };
+    const headers = { 'Content-Type': 'application/json' };
+    if (currentUser) {
+      headers['x-user-id'] = String(currentUser.id);
+      if (currentUser.role) headers['x-user-role'] = currentUser.role;
+    }
+    return headers;
+  }
+
+  function syncAuthUi() {
+    const signedIn = Boolean(currentUser);
+    const name = signedIn ? (currentUser.username || 'Player') : 'Guest';
+
+    if (headerAvatar) headerAvatar.textContent = name[0].toUpperCase();
+    if (headerUsername) headerUsername.textContent = name;
+    if (heroGreetingName) heroGreetingName.textContent = name;
+    if (heroGreetingPrefix) heroGreetingPrefix.textContent = signedIn ? 'Welcome back,' : 'Welcome,';
+
+    signUpLink?.classList.toggle('hidden', signedIn);
+    signOutButton?.classList.toggle('hidden', !signedIn);
+
+    [
+      navStreakPill,
+      navBalancePill,
+      heroStreakBadge,
+      heroBalanceCard,
+      dailyBonusCard,
+      quickStatsCard,
+      recentActivityCard
+    ].forEach((element) => element?.classList.toggle('hidden', !signedIn));
   }
 
   // Sync Initial UI
   function updateProfileUI(balance, streak) {
+    if (!currentUser) return;
     const b = Number(balance || 0).toFixed(2);
     const s = Number(streak || 1);
-
-    if (headerAvatar) headerAvatar.textContent = (currentUser.username || 'M')[0].toUpperCase();
-    if (headerUsername) headerUsername.textContent = currentUser.username || 'Michael';
-    if (heroGreetingName) heroGreetingName.textContent = currentUser.username || 'Michael';
 
     if (navBalanceVal) navBalanceVal.textContent = `$${b}`;
     if (heroBalanceVal) heroBalanceVal.textContent = `$${b}`;
@@ -79,6 +114,8 @@
 
   // 1. Fetch Dashboard Stats
   async function loadDashboardStats() {
+    if (!currentUser) return;
+
     try {
       const res = await fetch('/api/users/dashboard-stats', {
         headers: getHeaders()
@@ -340,8 +377,14 @@
       .replace(/'/g, '&#039;');
   }
 
-  // Initialize Dashboard
-  loadDashboardStats();
+  // Initialize guest or signed-in UI. Public quizzes remain browseable to guests.
+  syncAuthUi();
+  signOutButton?.addEventListener('click', () => {
+    localStorage.removeItem('quiz_user');
+    window.location.reload();
+  });
+
+  if (currentUser) loadDashboardStats();
   loadQuizzes();
 
 })();

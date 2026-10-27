@@ -4,7 +4,17 @@
   'use strict';
 
   const storedUser = localStorage.getItem('quiz_user');
-  let currentUser = storedUser ? JSON.parse(storedUser) : { id: 1, username: 'Michael', balance: 850 };
+  let currentUser = null;
+  try {
+    currentUser = storedUser ? JSON.parse(storedUser) : null;
+  } catch {
+    localStorage.removeItem('quiz_user');
+  }
+  if (!currentUser || !Number.isInteger(Number(currentUser.id)) || Number(currentUser.id) < 1) {
+    localStorage.removeItem('quiz_user');
+    window.location.replace(`/login.html?redirect=${encodeURIComponent(window.location.href)}`);
+    return;
+  }
   const headerBalanceEl = document.getElementById('header-balance');
   if (headerBalanceEl) headerBalanceEl.textContent = `$${currentUser.balance || 0}`;
 
