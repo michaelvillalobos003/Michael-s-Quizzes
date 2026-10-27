@@ -624,6 +624,9 @@ export async function seedQuizzes() {
       difficulty: quizData.difficulty,
       is_approved: quizData.is_approved,
       is_daily_challenge: quizData.is_daily_challenge,
+      status: 'Approved',
+      creator_user_id: 1,
+      rejection_feedback: null,
       created_at: new Date()
     };
     memStore.quizzes.push(quizRecord);
@@ -645,6 +648,76 @@ export async function seedQuizzes() {
           choice_text: c.choice_text,
           is_correct: Boolean(c.is_correct)
         });
+      });
+    });
+  }
+
+  // Seed sample Pending student quiz (for Educator Review Queue)
+  const pendingQuizId = memStore.counters.quizzes++;
+  memStore.quizzes.push({
+    id: pendingQuizId,
+    title: 'Anime & Shonen Powerups',
+    description: 'Trivia on Saiyan forms, bankai releases, breathing styles, and cursed techniques created by PixelGamer99.',
+    category: 'Anime',
+    difficulty: 'medium',
+    is_approved: false,
+    is_daily_challenge: false,
+    status: 'Pending',
+    creator_user_id: 2,
+    rejection_feedback: null,
+    created_at: new Date(Date.now() - 3600000 * 3)
+  });
+
+  for (let i = 1; i <= 10; i++) {
+    const qId = memStore.counters.questions++;
+    memStore.questions.push({
+      id: qId,
+      quiz_id: pendingQuizId,
+      question_text: `Sample Anime Question #${i}: Which legendary transformation unlocks this aura?`,
+      order_num: i
+    });
+    ['Super Saiyan', 'Gear 5', 'Bankai', 'Domain Expansion'].forEach((cText, cIdx) => {
+      memStore.choices.push({
+        id: memStore.counters.choices++,
+        question_id: qId,
+        choice_text: cText,
+        is_correct: cIdx === 0
+      });
+    });
+  }
+
+  // Seed sample Rejected student quiz (for My Created Quizzes and Edit & Resubmit workflow)
+  const rejectedQuizId = memStore.counters.quizzes++;
+  memStore.quizzes.push({
+    id: rejectedQuizId,
+    title: 'Space Explorers & Rocket Science',
+    description: 'Orbital mechanics, Apollo missions, and Mars rovers created by Michael.',
+    category: 'Science',
+    difficulty: 'hard',
+    is_approved: false,
+    is_daily_challenge: false,
+    status: 'Rejected',
+    creator_user_id: 1,
+    rejection_feedback: 'Question 4 needs clearer answer options. Please revise and resubmit!',
+    created_at: new Date(Date.now() - 3600000 * 24)
+  });
+
+  for (let i = 1; i <= 10; i++) {
+    const qId = memStore.counters.questions++;
+    memStore.questions.push({
+      id: qId,
+      quiz_id: rejectedQuizId,
+      question_text: i === 4 
+        ? 'Question 4 (Needs revision): Which propulsion system was tested on Artemis 1?' 
+        : `Space Exploration Question #${i}: What is the primary propellant used in standard liquid rocket engines?`,
+      order_num: i
+    });
+    ['Liquid Hydrogen & LOX', 'Hydrazine', 'Solid Fuel Booster', 'Kerosene RP-1'].forEach((cText, cIdx) => {
+      memStore.choices.push({
+        id: memStore.counters.choices++,
+        question_id: qId,
+        choice_text: cText,
+        is_correct: cIdx === 0
       });
     });
   }

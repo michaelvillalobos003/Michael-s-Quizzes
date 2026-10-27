@@ -362,17 +362,63 @@
   }
 
   function renderCreatedCards(quizzes) {
-    createdList.innerHTML = '';
+    createdList.innerHTML = "";
 
     quizzes.forEach(quiz => {
-      const statusBadge = getStatusBadge(quiz.status || 'Approved');
-      const card = document.createElement('div');
-      card.className = 'p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all flex flex-col justify-between';
+      const status = (quiz.status || "Approved").toLowerCase();
+      const statusBadge = getStatusBadge(quiz.status || "Approved");
+      const card = document.createElement("div");
+      card.className = "p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-750 transition-all flex flex-col justify-between";
+
+      let actionHtml = "";
+      if (status === "approved") {
+        actionHtml = `
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] text-slate-400 font-medium">🔒 Published & Locked</span>
+            <a
+              href="/quiz-take.html?id=${quiz.id}"
+              class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors"
+            >
+              Play Quiz
+            </a>
+          </div>
+        `;
+      } else if (status === "rejected") {
+        actionHtml = `
+          <a
+            href="/create-quiz.html?edit=${quiz.id}"
+            class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/30 transition-all flex items-center gap-1.5"
+          >
+            <span>✏️ Edit & Resubmit</span>
+          </a>
+        `;
+      } else {
+        actionHtml = `
+          <span class="text-xs text-amber-400 font-semibold flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+            <span>Awaiting Review</span>
+          </span>
+        `;
+      }
+
+      let feedbackBox = "";
+      if (status === "rejected") {
+        feedbackBox = `
+          <div class="mt-3 p-3 rounded-xl bg-rose-950/40 border border-rose-800/80 text-rose-200 text-xs space-y-1">
+            <div class="font-bold text-rose-400 flex items-center gap-1.5">
+              <span>👨‍🏫 Educator Feedback:</span>
+            </div>
+            <p class="text-slate-300 italic text-[11px] leading-relaxed">
+              "${escapeHtml(quiz.rejection_feedback || "Please revise your questions to ensure accuracy and resubmit.")}"
+            </p>
+          </div>
+        `;
+      }
 
       card.innerHTML = `
         <div class="space-y-2">
           <div class="flex items-center justify-between gap-2">
-            <span class="text-xs font-semibold text-slate-400">${escapeHtml(quiz.category || 'Custom')}</span>
+            <span class="text-xs font-semibold text-slate-400">${escapeHtml(quiz.category || "Custom")}</span>
             ${statusBadge}
           </div>
 
@@ -381,33 +427,29 @@
           </h3>
 
           <p class="text-xs text-slate-400 line-clamp-2">
-            ${escapeHtml(quiz.description || 'Custom crafted trivia quiz.')}
+            ${escapeHtml(quiz.description || "Custom student-crafted trivia quiz.")}
           </p>
+
+          ${feedbackBox}
         </div>
 
         <div class="pt-4 mt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-          <span>${quiz.question_count || 10} Questions</span>
-          <a
-            href="/quiz-take.html?id=${quiz.id}"
-            class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors"
-          >
-            Play Quiz
-          </a>
+          <span>📝 ${quiz.question_count || 10} Questions</span>
+          ${actionHtml}
         </div>
       `;
-
       createdList.appendChild(card);
     });
   }
 
   function getStatusBadge(status) {
-    const s = (status || '').toLowerCase();
-    if (s === 'approved') {
-      return '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800/60">✓ Approved</span>';
-    } else if (s === 'pending') {
-      return '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-950 text-amber-400 border border-amber-800/60">⏳ Pending Review</span>';
+    const s = (status || "").toUpperCase();
+    if (s === "APPROVED") {
+      return '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">✓ APPROVED</span>';
+    } else if (s === "REJECTED") {
+      return '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-500/20 text-rose-300 border border-rose-500/30">✗ REJECTED</span>';
     } else {
-      return '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">Draft</span>';
+      return '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">⏳ PENDING</span>';
     }
   }
 
@@ -421,6 +463,11 @@
       .replace(/'/g, '&#039;');
   }
 
-  // Load History on Page Load
-  loadHistory();
+  // Load History or Created tab on Page Load
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("tab") === "created") {
+    tabCreatedBtn.click();
+  } else {
+    loadHistory();
+  }
 })();

@@ -16,6 +16,8 @@ export const memStore = {
       email: 'michaelvilla0031@gmail.com',
       role: 'teacher',
       balance: 850,
+      streak_count: 4,
+      last_daily_bonus_claimed: null,
       created_at: new Date(Date.now() - 86400000 * 5)
     },
     {
@@ -180,23 +182,28 @@ async function initPostgresTables() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
-      -- Ensure creator_user_id and status columns exist on quizzes
+      -- Ensure creator_user_id, status, and rejection_feedback columns exist on quizzes
       ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS creator_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
       ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'Approved';
+      ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS rejection_feedback TEXT DEFAULT NULL;
+
+      -- Ensure role, streak, and daily bonus columns exist on users
       ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'student';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS streak_count INTEGER DEFAULT 3;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS last_daily_bonus_claimed TIMESTAMP DEFAULT NULL;
 
       -- Ensure default demo users exist
-      INSERT INTO users (id, username, email, role, balance)
-      VALUES (1, 'Michael', 'michaelvilla0031@gmail.com', 'teacher', 850)
+      INSERT INTO users (id, username, email, role, balance, streak_count)
+      VALUES (1, 'Michael', 'michaelvilla0031@gmail.com', 'teacher', 850, 4)
       ON CONFLICT (id) DO UPDATE SET role = 'teacher';
 
-      INSERT INTO users (id, username, email, role, balance)
+      INSERT INTO users (id, username, email, role, balance, streak_count)
       VALUES 
-        (2, 'PixelGamer99', 'pixel@example.com', 'student', 520),
-        (3, 'TriviaQueen', 'queen@example.com', 'student', 480),
-        (4, 'NeoCoder', 'neo@example.com', 'student', 350),
-        (5, 'SpeedRunnerX', 'speed@example.com', 'student', 290),
-        (6, 'BlockMaster', 'block@example.com', 'student', 210)
+        (2, 'PixelGamer99', 'pixel@example.com', 'student', 520, 3),
+        (3, 'TriviaQueen', 'queen@example.com', 'student', 480, 5),
+        (4, 'NeoCoder', 'neo@example.com', 'student', 350, 2),
+        (5, 'SpeedRunnerX', 'speed@example.com', 'student', 290, 1),
+        (6, 'BlockMaster', 'block@example.com', 'student', 210, 1)
       ON CONFLICT (id) DO NOTHING;
     `);
     console.log('[PostgreSQL] Database tables initialized successfully.');

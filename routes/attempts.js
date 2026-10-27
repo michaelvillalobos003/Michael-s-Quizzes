@@ -187,16 +187,18 @@ router.get('/my-created-quizzes', async (req, res) => {
       const pool = db.getPool();
       const resQuizzes = await pool.query(`
         SELECT 
-          id, title, description, category, difficulty, is_approved, is_daily_challenge, status, created_at,
+          id, title, description, category, difficulty, is_approved, is_daily_challenge, status, rejection_feedback, created_at,
           (SELECT COUNT(*) FROM questions q WHERE q.quiz_id = quizzes.id) AS question_count
         FROM quizzes
-        WHERE creator_user_id = $1 OR id > 5
+        WHERE creator_user_id = $1 OR id > 6
         ORDER BY created_at DESC, id DESC
       `, [userId]);
 
       const list = resQuizzes.rows.map(q => ({
         ...q,
-        status: q.status || (q.is_approved ? 'Approved' : 'Pending')
+        status: q.status || (q.is_approved ? 'Approved' : 'Pending'),
+        is_locked: q.status === 'Approved',
+        rejection_feedback: q.rejection_feedback || null
       }));
 
       return res.json({ success: true, created_quizzes: list });
@@ -204,10 +206,12 @@ router.get('/my-created-quizzes', async (req, res) => {
 
     // In-memory fallback: return custom or user quizzes
     const list = memStore.quizzes
-      .filter(q => q.creator_user_id === userId || q.id > 5)
+      .filter(q => q.creator_user_id === userId || q.id > 6)
       .map(q => ({
         ...q,
         status: q.status || (q.is_approved ? 'Approved' : 'Pending'),
+        is_locked: q.status === 'Approved',
+        rejection_feedback: q.rejection_feedback || null,
         question_count: memStore.questions.filter(qu => qu.quiz_id === q.id).length
       }));
 
