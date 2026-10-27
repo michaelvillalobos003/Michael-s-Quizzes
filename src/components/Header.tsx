@@ -68,7 +68,23 @@ export const Header: React.FC<HeaderProps> = ({
             className="px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all duration-200 flex items-center gap-1.5"
           >
             <span>📜</span>
-            <span className="hidden sm:inline">My History</span>
+            <span className="hidden sm:inline">History</span>
+          </a>
+
+          <a
+            href="/leaderboards.html"
+            className="px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all duration-200 flex items-center gap-1.5"
+          >
+            <span>🏆</span>
+            <span className="hidden sm:inline">Leaderboards</span>
+          </a>
+
+          <a
+            href="/admin.html"
+            className="px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all duration-200 flex items-center gap-1.5"
+          >
+            <span>⚙️</span>
+            <span className="hidden sm:inline">Admin</span>
           </a>
 
           <button

@@ -14,8 +14,49 @@ export const memStore = {
       id: 1,
       username: 'Michael',
       email: 'michaelvilla0031@gmail.com',
-      balance: 100,
-      created_at: new Date()
+      role: 'teacher',
+      balance: 850,
+      created_at: new Date(Date.now() - 86400000 * 5)
+    },
+    {
+      id: 2,
+      username: 'PixelGamer99',
+      email: 'pixel@example.com',
+      role: 'student',
+      balance: 520,
+      created_at: new Date(Date.now() - 86400000 * 4)
+    },
+    {
+      id: 3,
+      username: 'TriviaQueen',
+      email: 'queen@example.com',
+      role: 'student',
+      balance: 480,
+      created_at: new Date(Date.now() - 86400000 * 3)
+    },
+    {
+      id: 4,
+      username: 'NeoCoder',
+      email: 'neo@example.com',
+      role: 'student',
+      balance: 350,
+      created_at: new Date(Date.now() - 86400000 * 2)
+    },
+    {
+      id: 5,
+      username: 'SpeedRunnerX',
+      email: 'speed@example.com',
+      role: 'student',
+      balance: 290,
+      created_at: new Date(Date.now() - 86400000 * 2)
+    },
+    {
+      id: 6,
+      username: 'BlockMaster',
+      email: 'block@example.com',
+      role: 'student',
+      balance: 210,
+      created_at: new Date(Date.now() - 86400000 * 1)
     }
   ],
   quizzes: [],
@@ -142,10 +183,20 @@ async function initPostgresTables() {
       -- Ensure creator_user_id and status columns exist on quizzes
       ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS creator_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
       ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'Approved';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'student';
 
-      -- Ensure default demo user exists
-      INSERT INTO users (id, username, email, balance)
-      VALUES (1, 'Michael', 'michaelvilla0031@gmail.com', 100)
+      -- Ensure default demo users exist
+      INSERT INTO users (id, username, email, role, balance)
+      VALUES (1, 'Michael', 'michaelvilla0031@gmail.com', 'teacher', 850)
+      ON CONFLICT (id) DO UPDATE SET role = 'teacher';
+
+      INSERT INTO users (id, username, email, role, balance)
+      VALUES 
+        (2, 'PixelGamer99', 'pixel@example.com', 'student', 520),
+        (3, 'TriviaQueen', 'queen@example.com', 'student', 480),
+        (4, 'NeoCoder', 'neo@example.com', 'student', 350),
+        (5, 'SpeedRunnerX', 'speed@example.com', 'student', 290),
+        (6, 'BlockMaster', 'block@example.com', 'student', 210)
       ON CONFLICT (id) DO NOTHING;
     `);
     console.log('[PostgreSQL] Database tables initialized successfully.');
