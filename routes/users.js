@@ -180,8 +180,17 @@ router.post('/claim-daily-bonus', async (req, res) => {
         success: true,
         message: '🎉 +$50 Daily Streak Bonus Claimed!',
         bonus_amount: 50,
+        bonus_awarded: 50,
+        balance: newBalance,
         new_balance: newBalance,
-        new_streak: newStreak
+        streak_count: newStreak,
+        new_streak: newStreak,
+        user: {
+          id: user.id,
+          username: user.username,
+          balance: newBalance,
+          streak_count: newStreak
+        }
       });
     }
 
@@ -208,8 +217,17 @@ router.post('/claim-daily-bonus', async (req, res) => {
       success: true,
       message: '🎉 +$50 Daily Streak Bonus Claimed!',
       bonus_amount: 50,
+      bonus_awarded: 50,
+      balance: user.balance,
       new_balance: user.balance,
-      new_streak: user.streak_count
+      streak_count: user.streak_count,
+      new_streak: user.streak_count,
+      user: {
+        id: user.id,
+        username: user.username,
+        balance: user.balance,
+        streak_count: user.streak_count
+      }
     });
   } catch (err) {
     console.error('Error claiming daily bonus:', err);

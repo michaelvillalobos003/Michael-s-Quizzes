@@ -63,8 +63,10 @@
 
   // Sync Initial UI
   function updateProfileUI(balance, streak) {
-    const b = Number(balance || 0).toFixed(2);
-    const s = Number(streak || 1);
+    const balNum = (balance !== undefined && balance !== null) ? Number(balance) : Number(currentUser.balance || 0);
+    const strNum = (streak !== undefined && streak !== null) ? Number(streak) : Number(currentUser.streak_count || 1);
+    const b = isNaN(balNum) ? '0.00' : balNum.toFixed(2);
+    const s = isNaN(strNum) ? 1 : strNum;
 
     if (headerAvatar) headerAvatar.textContent = (currentUser.username || 'M')[0].toUpperCase();
     if (headerUsername) headerUsername.textContent = currentUser.username || 'Michael';
@@ -98,8 +100,15 @@
       const accuracy = s.accuracy_pct !== undefined ? s.accuracy_pct : (s.stats && s.stats.accuracy_pct !== undefined ? s.stats.accuracy_pct : 95);
       const recent = s.latest_attempt || data.recent_activity;
 
-      // Update User & Header Stats
-      updateProfileUI(user.balance, user.streak_count);
+      // Update and persist User & Header Stats
+      if (user && user.balance !== undefined) {
+        currentUser.balance = parseFloat(user.balance);
+        if (user.streak_count !== undefined) {
+          currentUser.streak_count = parseInt(user.streak_count, 10);
+        }
+        localStorage.setItem('quiz_user', JSON.stringify(currentUser));
+      }
+      updateProfileUI(currentUser.balance, currentUser.streak_count);
 
       // Update Quick Stats Matrix
       if (statRankVal) statRankVal.textContent = `#${rank}`;
@@ -133,7 +142,7 @@
       configureDailyBonus(canClaim, secondsLeft);
     } catch (err) {
       console.warn('Dashboard stats error:', err.message);
-      updateProfileUI(0, 1);
+      updateProfileUI(currentUser.balance, currentUser.streak_count);
     }
   }
 
@@ -195,11 +204,27 @@
         throw new Error(data.error || 'Failed to claim bonus');
       }
 
-      alert(`🎉 Bonus Claimed! You received +$${data.bonus_awarded} virtual cash!\nYour streak is now ${data.streak_count} days strong! 🔥`);
-      updateProfileUI(data.balance, data.streak_count);
+      const awardedAmount = data.bonus_amount || data.bonus_awarded || 50;
+      const updatedBalance = data.balance !== undefined
+        ? parseFloat(data.balance)
+        : (data.new_balance !== undefined ? parseFloat(data.new_balance) : (Number(currentUser.balance || 0) + awardedAmount));
+      const updatedStreak = data.streak_count !== undefined
+        ? parseInt(data.streak_count, 10)
+        : (data.new_streak !== undefined ? parseInt(data.new_streak, 10) : (Number(currentUser.streak_count || 1) + 1));
+
+      // Update current user state and persistent storage
+      currentUser.balance = updatedBalance;
+      currentUser.streak_count = updatedStreak;
+      localStorage.setItem('quiz_user', JSON.stringify(currentUser));
+
+      // Update UI displays immediately with new balance
+      updateProfileUI(updatedBalance, updatedStreak);
+
+      alert(`🎉 Bonus Claimed! You received +$${awardedAmount} virtual cash!\nYour new balance is $${updatedBalance.toFixed(2)} and your streak is ${updatedStreak} days! 🔥`);
       configureDailyBonus(false, 86400); // 24 hours
+      loadDashboardStats();
     } catch (err) {
-      alert(`Claim bonus error: ${err.message}`);
+      alert(`Claim bonus info: ${err.message}`);
       loadDashboardStats();
     }
   });
