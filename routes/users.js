@@ -3,19 +3,9 @@ import db, { memStore } from '../db/index.js';
 
 const router = Router();
 
-function requireUserId(req, res) {
-  const userId = Number.parseInt(req.headers['x-user-id'], 10);
-  if (!Number.isInteger(userId) || userId < 1) {
-    res.status(401).json({ success: false, error: 'Sign in required' });
-    return null;
-  }
-  return userId;
-}
-
 // GET /api/users/me - Get current user profile and balance
 router.get('/me', async (req, res) => {
-  const userId = requireUserId(req, res);
-  if (!userId) return;
+  const userId = req.headers['x-user-id'] ? parseInt(req.headers['x-user-id'], 10) : 1;
 
   try {
     if (db.isPostgres()) {
@@ -51,8 +41,7 @@ router.get('/me', async (req, res) => {
 
 // GET /api/users/dashboard-stats - For Bento Grid Home Dashboard
 router.get('/dashboard-stats', async (req, res) => {
-  const userId = requireUserId(req, res);
-  if (!userId) return;
+  const userId = req.headers['x-user-id'] ? parseInt(req.headers['x-user-id'], 10) : 1;
 
   try {
     let user = null;
@@ -156,8 +145,7 @@ router.get('/dashboard-stats', async (req, res) => {
 
 // POST /api/users/claim-daily-bonus - Claim +$50 daily streak bonus
 router.post('/claim-daily-bonus', async (req, res) => {
-  const userId = requireUserId(req, res);
-  if (!userId) return;
+  const userId = req.headers['x-user-id'] ? parseInt(req.headers['x-user-id'], 10) : 1;
   const now = new Date();
 
   try {
@@ -229,22 +217,128 @@ router.post('/claim-daily-bonus', async (req, res) => {
   }
 });
 
-// POST /api/users/login - Simple login or switch user
-router.post('/login', async (req, res) => {
-  const { username, email } = req.body;
-  const cleanUsername = typeof username === 'string' ? username.trim() : '';
-  if (!cleanUsername) {
-    return res.status(400).json({ success: false, error: 'Username is required' });
+// POST /api/users/signup - Register a new user with username and gmail
+router.post('/signup', async (req, res) => {
+  const { username, email, gmail, role } = req.body;
+  const rawUsername = (username || '').trim();
+  let rawEmail = (gmail || email || '').trim();
+
+  if (!rawUsername) {
+    return res.status(400).json({ success: false, error: 'Please enter your username.' });
   }
-  const cleanEmail = typeof email === 'string' && email.trim()
-    ? email.trim()
-    : `${cleanUsername.toLowerCase()}@example.com`;
+
+  if (rawUsername.length < 2) {
+    return res.status(400).json({ success: false, error: 'Username must be at least 2 characters long.' });
+  }
+
+  if (!rawEmail) {
+    return res.status(400).json({ success: false, error: 'Please enter your Gmail address.' });
+  }
+
+  // Normalize gmail format if missing @
+  if (!rawEmail.includes('@')) {
+    rawEmail = `${rawEmail.toLowerCase()}@gmail.com`;
+  }
+
+  const cleanUsername = rawUsername;
+  const cleanEmail = rawEmail.toLowerCase();
+  const assignedRole = role === 'teacher' ? 'teacher' : 'student';
 
   try {
     if (db.isPostgres()) {
       const pool = db.getPool();
-      let userRes = await pool.query('SELECT * FROM users WHERE username = $1 OR email = $2', [cleanUsername, cleanEmail]);
+      const existing = await pool.query(
+        'SELECT id, username, email, role, balance, streak_count FROM users WHERE LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($2)',
+        [cleanUsername, cleanEmail]
+      );
+
+      if (existing.rows.length > 0) {
+        // Return existing user smoothly
+        return res.json({
+          success: true,
+          user: existing.rows[0],
+          isNew: false,
+          message: `Welcome back, ${existing.rows[0].username}!`
+        });
+      }
+
+      const insertRes = await pool.query(
+        'INSERT INTO users (username, email, role, balance, streak_count) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, email, role, balance, streak_count',
+        [cleanUsername, cleanEmail, assignedRole, 100, 1]
+      );
+      return res.status(201).json({
+        success: true,
+        user: insertRes.rows[0],
+        isNew: true,
+        message: 'Account created! Welcome to Michael\'s Quizzes.'
+      });
+    } else {
+      let existingUser = memStore.users.find(
+        u => u.username.toLowerCase() === cleanUsername.toLowerCase() ||
+             (u.email && u.email.toLowerCase() === cleanEmail.toLowerCase())
+      );
+
+      if (existingUser) {
+        return res.json({
+          success: true,
+          user: existingUser,
+          isNew: false,
+          message: `Welcome back, ${existingUser.username}!`
+        });
+      }
+
+      const newUser = {
+        id: memStore.counters.users++,
+        username: cleanUsername,
+        email: cleanEmail,
+        role: assignedRole,
+        balance: 100,
+        streak_count: 1,
+        last_daily_bonus_claimed: null,
+        created_at: new Date()
+      };
+      memStore.users.push(newUser);
+
+      return res.status(201).json({
+        success: true,
+        user: newUser,
+        isNew: true,
+        message: 'Account created! Welcome to Michael\'s Quizzes.'
+      });
+    }
+  } catch (err) {
+    console.error('Signup error:', err);
+    res.status(500).json({ success: false, error: 'Server error during sign up.' });
+  }
+});
+
+// POST /api/users/login - Simple login or switch user by username and gmail
+router.post('/login', async (req, res) => {
+  const { username, email, gmail } = req.body;
+  const rawUsername = (username || '').trim();
+  let rawEmail = (gmail || email || '').trim();
+
+  if (!rawUsername && !rawEmail) {
+    return res.status(400).json({ success: false, error: 'Please enter your username or Gmail.' });
+  }
+
+  // Normalize gmail format if missing @
+  if (rawEmail && !rawEmail.includes('@')) {
+    rawEmail = `${rawEmail.toLowerCase()}@gmail.com`;
+  }
+
+  const cleanUsername = rawUsername || (rawEmail ? rawEmail.split('@')[0] : 'Player');
+  const cleanEmail = rawEmail.toLowerCase() || `${cleanUsername.toLowerCase()}@gmail.com`;
+
+  try {
+    if (db.isPostgres()) {
+      const pool = db.getPool();
+      let userRes = await pool.query(
+        'SELECT id, username, email, role, balance, streak_count FROM users WHERE LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($2)',
+        [cleanUsername, cleanEmail]
+      );
       if (userRes.rows.length === 0) {
+        // Auto-create on login if doesn't exist yet
         userRes = await pool.query(
           'INSERT INTO users (username, email, role, balance, streak_count) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, email, role, balance, streak_count',
           [cleanUsername, cleanEmail, 'student', 100, 1]
@@ -252,7 +346,11 @@ router.post('/login', async (req, res) => {
       }
       return res.json({ success: true, user: userRes.rows[0] });
     } else {
-      let user = memStore.users.find(u => u.username.toLowerCase() === cleanUsername.toLowerCase());
+      let user = memStore.users.find(
+        u => (rawUsername && u.username.toLowerCase() === rawUsername.toLowerCase()) ||
+             (rawEmail && u.email && u.email.toLowerCase() === rawEmail.toLowerCase())
+      );
+
       if (!user) {
         user = {
           id: memStore.counters.users++,

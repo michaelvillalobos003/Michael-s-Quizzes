@@ -3,89 +3,409 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign Up • Michael's Quizzes</title>
+  <title>Sign Up & Sign In • Michael's Quizzes</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .auth-tab.active {
+      background-color: #4f46e5;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+    }
   </style>
   <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4">
-  <div class="max-w-md w-full rounded-3xl bg-slate-900 border border-slate-800 p-8 shadow-2xl relative overflow-hidden">
-    <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-indigo-600/10 rounded-full blur-2xl pointer-events-none"></div>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between p-4 selection:bg-indigo-500 selection:text-white">
 
-    <div class="text-center mb-6">
-      <div class="w-14 h-14 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center text-2xl mx-auto mb-3">
+  <!-- Top bar with Back button -->
+  <header class="max-w-md w-full mx-auto pt-2 flex items-center justify-between">
+    <a href="/index.html" class="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-800">
+      <span>←</span>
+      <span>Back to Quizzes</span>
+    </a>
+    <div class="text-[11px] font-bold text-indigo-400 uppercase tracking-wider">
+      ⚡ Michael's Quizzes
+    </div>
+  </header>
+
+  <!-- Auth Card Container -->
+  <div class="max-w-md w-full mx-auto my-6 rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+    <!-- Ambient ambient glow -->
+    <div class="absolute top-0 right-0 -mt-10 -mr-10 w-44 h-44 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-44 h-44 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- Header Badge -->
+    <div class="text-center mb-6 relative z-10">
+      <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-cyan-500 text-white flex items-center justify-center text-2xl mx-auto mb-3 shadow-lg shadow-indigo-600/30">
         ✨
       </div>
-      <h1 class="text-2xl font-bold text-white">Sign Up to Play</h1>
-      <p class="text-slate-400 text-xs mt-1">Create a player profile to track scores and rewards.</p>
+      <h1 id="auth-title" class="text-2xl font-black text-white tracking-tight">Create Your Account</h1>
+      <p id="auth-subtitle" class="text-slate-400 text-xs mt-1.5 leading-relaxed">
+        Join Michael's Quizzes with your username and Gmail to earn $100 starting cash!
+      </p>
     </div>
 
-    <form id="login-form" class="space-y-4">
+    <!-- Mode Switcher Tabs (Sign Up vs Sign In) -->
+    <div class="p-1 rounded-2xl bg-slate-950 border border-slate-800 grid grid-cols-2 gap-1 mb-6 relative z-10">
+      <button
+        type="button"
+        id="tab-signup"
+        class="auth-tab active py-2 rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5"
+      >
+        <span>✨</span>
+        <span>Sign Up</span>
+      </button>
+      <button
+        type="button"
+        id="tab-signin"
+        class="auth-tab py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition-all text-center flex items-center justify-center gap-1.5"
+      >
+        <span>🔑</span>
+        <span>Sign In</span>
+      </button>
+    </div>
+
+    <!-- Feedback Notification Banner -->
+    <div id="feedback-banner" class="hidden mb-4 p-3 rounded-xl text-xs flex items-start gap-2.5 transition-all relative z-10">
+      <span id="feedback-icon" class="text-base">ℹ️</span>
+      <div class="flex-1">
+        <span id="feedback-message" class="font-medium leading-relaxed"></span>
+      </div>
+      <button type="button" id="feedback-close" class="text-slate-400 hover:text-white text-xs">✕</button>
+    </div>
+
+    <!-- Primary Form -->
+    <form id="auth-form" class="space-y-4 relative z-10">
+      <!-- Field 1: Your Username -->
       <div>
-        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Choose a Username</label>
-        <input
-          type="text"
-          id="username-input"
-          required
-          placeholder="Choose a username"
-          class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
+        <label for="username-input" class="block text-xs font-bold text-slate-300 mb-1.5 flex items-center justify-between">
+          <span class="flex items-center gap-1.5">
+            <span>👤</span>
+            <span>Your Username</span>
+          </span>
+          <span class="text-[10px] text-slate-500 font-normal">Leaderboard Display Name</span>
+        </label>
+        <div class="relative">
+          <input
+            type="text"
+            id="username-input"
+            required
+            placeholder="Enter your username (e.g. TriviaMaster)"
+            autocomplete="username"
+            class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium"
+          />
+        </div>
       </div>
 
+      <!-- Field 2: Your Gmail -->
       <div>
-        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Email Address</label>
-        <input
-          type="email"
-          id="email-input"
-          placeholder="name@example.com"
-          class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
+        <label for="email-input" class="block text-xs font-bold text-slate-300 mb-1.5 flex items-center justify-between">
+          <span class="flex items-center gap-1.5">
+            <span>📧</span>
+            <span>Your Gmail</span>
+          </span>
+          <span class="text-[10px] text-indigo-400 font-semibold">@gmail.com</span>
+        </label>
+        <div class="relative">
+          <input
+            type="email"
+            id="email-input"
+            required
+            placeholder="yourname@gmail.com"
+            autocomplete="email"
+            class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium"
+          />
+        </div>
+        <!-- Quick helper chip to auto-append @gmail.com -->
+        <div class="mt-1.5 flex items-center justify-between text-[11px] text-slate-400">
+          <span>Format: <code class="text-indigo-300 font-mono">user@gmail.com</code></span>
+          <button
+            type="button"
+            id="append-gmail-btn"
+            class="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 bg-indigo-950/60 hover:bg-indigo-900/60 px-2 py-0.5 rounded-lg border border-indigo-800/50 transition-colors"
+          >
+            + Auto-fill @gmail.com
+          </button>
+        </div>
       </div>
 
+      <!-- Starter Bonus Perk Callout (Shown on Sign Up) -->
+      <div id="starter-perk" class="p-3 rounded-2xl bg-emerald-950/30 border border-emerald-800/40 flex items-center gap-3">
+        <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-base font-bold flex-shrink-0">
+          💰
+        </div>
+        <div class="text-xs">
+          <div class="font-bold text-emerald-300">+$100.00 Starting Virtual Cash</div>
+          <div class="text-slate-400 text-[11px]">Free new player bonus credited immediately upon registration.</div>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
       <button
         type="submit"
-        class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all active:scale-95"
+        id="submit-btn"
+        class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-extrabold text-sm shadow-lg shadow-indigo-600/30 transition-all active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
       >
-        Create Account & Continue
+        <span id="submit-icon">✨</span>
+        <span id="submit-label">Create Account & Start Playing</span>
       </button>
+
+      <!-- Toggle Help Link -->
+      <div class="text-center pt-2">
+        <button
+          type="button"
+          id="toggle-mode-btn"
+          class="text-xs font-semibold text-slate-400 hover:text-indigo-400 transition-colors"
+        >
+          Already have an account? <span class="text-indigo-400 underline">Sign in instead</span>
+        </button>
+      </div>
+
+      <!-- Divider -->
+      <div class="relative py-2 flex items-center justify-center">
+        <div class="border-t border-slate-800 w-full"></div>
+        <span class="bg-slate-900 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 absolute">
+          Demo Test Accounts
+        </span>
+      </div>
+
+      <!-- Quick Demo Sign-In Buttons -->
+      <div class="space-y-2">
+        <button
+          type="button"
+          id="demo-michael-btn"
+          class="w-full py-2 px-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-bold border border-slate-800 flex items-center justify-between transition-colors"
+        >
+          <div class="flex items-center gap-2">
+            <span class="w-5 h-5 rounded-md bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">M</span>
+            <span>Michael (Teacher / Admin)</span>
+          </div>
+          <span class="text-emerald-400 font-extrabold">$850 • Streak 4🔥</span>
+        </button>
+
+        <button
+          type="button"
+          id="demo-student-btn"
+          class="w-full py-2 px-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-bold border border-slate-800 flex items-center justify-between transition-colors"
+        >
+          <div class="flex items-center gap-2">
+            <span class="w-5 h-5 rounded-md bg-cyan-600 text-white flex items-center justify-center text-[10px] font-bold">P</span>
+            <span>PixelGamer99 (Student)</span>
+          </div>
+          <span class="text-emerald-400 font-extrabold">$520</span>
+        </button>
+      </div>
     </form>
   </div>
 
+  <!-- Footer -->
+  <footer class="text-center text-xs text-slate-600 pb-2">
+    © 2026 Michael's Quizzes • Safe educational trivia for kids & teens.
+  </footer>
+
   <script>
-    const form = document.getElementById('login-form');
-    const urlParams = new URLSearchParams(window.location.search);
-    const returnUrl = urlParams.get('redirect') ? decodeURIComponent(urlParams.get('redirect')) : '/index.html';
+    (function () {
+      'use strict';
 
-    async function handleSignup(username, email) {
-      try {
-        const res = await fetch('/api/users/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, email })
-        });
-        const data = await res.json();
-        if (data.success && data.user) {
-          localStorage.setItem('quiz_user', JSON.stringify(data.user));
-          window.location.href = returnUrl;
+      // Elements
+      const tabSignup = document.getElementById('tab-signup');
+      const tabSignin = document.getElementById('tab-signin');
+      const authTitle = document.getElementById('auth-title');
+      const authSubtitle = document.getElementById('auth-subtitle');
+      const authForm = document.getElementById('auth-form');
+      const usernameInput = document.getElementById('username-input');
+      const emailInput = document.getElementById('email-input');
+      const appendGmailBtn = document.getElementById('append-gmail-btn');
+      const starterPerk = document.getElementById('starter-perk');
+      const submitBtn = document.getElementById('submit-btn');
+      const submitIcon = document.getElementById('submit-icon');
+      const submitLabel = document.getElementById('submit-label');
+      const toggleModeBtn = document.getElementById('toggle-mode-btn');
+
+      const feedbackBanner = document.getElementById('feedback-banner');
+      const feedbackIcon = document.getElementById('feedback-icon');
+      const feedbackMessage = document.getElementById('feedback-message');
+      const feedbackClose = document.getElementById('feedback-close');
+
+      const demoMichaelBtn = document.getElementById('demo-michael-btn');
+      const demoStudentBtn = document.getElementById('demo-student-btn');
+
+      // State: 'signup' | 'signin'
+      let currentMode = 'signup';
+
+      // URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const returnUrl = urlParams.get('redirect') ? decodeURIComponent(urlParams.get('redirect')) : '/index.html';
+      const initialMode = urlParams.get('mode') || (window.location.pathname.includes('signup') ? 'signup' : 'signup');
+
+      function setMode(mode) {
+        currentMode = mode;
+        hideFeedback();
+
+        if (mode === 'signup') {
+          tabSignup.classList.add('active', 'bg-indigo-600', 'text-white');
+          tabSignup.classList.remove('text-slate-400');
+          tabSignin.classList.remove('active', 'bg-indigo-600', 'text-white');
+          tabSignin.classList.add('text-slate-400');
+
+          authTitle.textContent = 'Create Your Player Account';
+          authSubtitle.textContent = 'Enter your username and your Gmail to start with $100 starting cash!';
+          starterPerk.classList.remove('hidden');
+
+          submitIcon.textContent = '✨';
+          submitLabel.textContent = 'Create Account & Start Playing';
+          toggleModeBtn.innerHTML = 'Already have an account? <span class="text-indigo-400 underline">Sign in instead</span>';
         } else {
-          alert('Sign-up failed: ' + (data.error || 'Unknown error'));
-        }
-      } catch (err) {
-        alert('Could not create your account. Please try again when the server is available.');
-      }
-    }
+          tabSignin.classList.add('active', 'bg-indigo-600', 'text-white');
+          tabSignin.classList.remove('text-slate-400');
+          tabSignup.classList.remove('active', 'bg-indigo-600', 'text-white');
+          tabSignup.classList.add('text-slate-400');
 
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const u = document.getElementById('username-input').value.trim();
-      const em = document.getElementById('email-input').value.trim();
-      handleSignup(u, em);
-    });
+          authTitle.textContent = 'Welcome Back Player';
+          authSubtitle.textContent = 'Sign in with your username and Gmail to resume your streak and cash balance.';
+          starterPerk.classList.add('hidden');
+
+          submitIcon.textContent = '🔑';
+          submitLabel.textContent = 'Sign In to Your Account';
+          toggleModeBtn.innerHTML = 'Need a new player account? <span class="text-indigo-400 underline">Sign up here</span>';
+        }
+      }
+
+      function showFeedback(type, message) {
+        feedbackBanner.classList.remove('hidden', 'bg-rose-950/60', 'border-rose-800', 'text-rose-200', 'bg-emerald-950/60', 'border-emerald-800', 'text-emerald-200');
+        if (type === 'error') {
+          feedbackBanner.classList.add('bg-rose-950/60', 'border', 'border-rose-800', 'text-rose-200');
+          feedbackIcon.textContent = '⚠️';
+        } else {
+          feedbackBanner.classList.add('bg-emerald-950/60', 'border', 'border-emerald-800', 'text-emerald-200');
+          feedbackIcon.textContent = '🎉';
+        }
+        feedbackMessage.textContent = message;
+      }
+
+      function hideFeedback() {
+        feedbackBanner.classList.add('hidden');
+      }
+
+      feedbackClose.addEventListener('click', hideFeedback);
+
+      // Tab switcher clicks
+      tabSignup.addEventListener('click', () => setMode('signup'));
+      tabSignin.addEventListener('click', () => setMode('signin'));
+      toggleModeBtn.addEventListener('click', () => setMode(currentMode === 'signup' ? 'signin' : 'signup'));
+
+      // Helper to append @gmail.com
+      appendGmailBtn.addEventListener('click', () => {
+        let val = emailInput.value.trim();
+        if (!val) {
+          const userVal = usernameInput.value.trim();
+          val = userVal ? userVal.toLowerCase().replace(/[^a-z0-9]/g, '') : 'player';
+        }
+        if (!val.includes('@')) {
+          emailInput.value = `${val}@gmail.com`;
+        }
+        emailInput.focus();
+      });
+
+      // Format clean Gmail
+      function cleanGmail(str) {
+        if (!str) return '';
+        let s = str.trim().toLowerCase();
+        if (!s.includes('@')) {
+          s = `${s}@gmail.com`;
+        }
+        return s;
+      }
+
+      // Handle Authentication Submission
+      async function handleAuth(username, gmail) {
+        hideFeedback();
+
+        const cleanUser = username.trim();
+        const cleanMail = cleanGmail(gmail);
+
+        if (!cleanUser) {
+          showFeedback('error', 'Please enter your username.');
+          usernameInput.focus();
+          return;
+        }
+
+        if (!cleanMail) {
+          showFeedback('error', 'Please enter your Gmail address.');
+          emailInput.focus();
+          return;
+        }
+
+        submitBtn.disabled = true;
+        const originalText = submitLabel.textContent;
+        submitLabel.textContent = currentMode === 'signup' ? 'Creating Account...' : 'Signing In...';
+
+        try {
+          const endpoint = currentMode === 'signup' ? '/api/users/signup' : '/api/users/login';
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: cleanUser,
+              email: cleanMail,
+              gmail: cleanMail,
+              role: 'student'
+            })
+          });
+
+          const data = await res.json();
+
+          if (!res.ok || !data.success || !data.user) {
+            throw new Error(data.error || 'Authentication failed. Please check your credentials.');
+          }
+
+          // Save user session in localStorage
+          localStorage.setItem('quiz_user', JSON.stringify(data.user));
+
+          showFeedback('success', `${data.message || 'Success! Redirecting you to quizzes...'}`);
+
+          setTimeout(() => {
+            window.location.href = returnUrl;
+          }, 800);
+
+        } catch (err) {
+          showFeedback('error', err.message);
+          submitBtn.disabled = false;
+          submitLabel.textContent = originalText;
+        }
+      }
+
+      // Form submission
+      authForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const u = usernameInput.value;
+        const em = emailInput.value;
+        handleAuth(u, em);
+      });
+
+      // Quick Demo logins
+      demoMichaelBtn.addEventListener('click', () => {
+        usernameInput.value = 'Michael';
+        emailInput.value = 'michaelvilla0031@gmail.com';
+        handleAuth('Michael', 'michaelvilla0031@gmail.com');
+      });
+
+      demoStudentBtn.addEventListener('click', () => {
+        usernameInput.value = 'PixelGamer99';
+        emailInput.value = 'pixel@gmail.com';
+        handleAuth('PixelGamer99', 'pixel@gmail.com');
+      });
+
+      // Initialize mode
+      setMode(initialMode === 'signin' ? 'signin' : 'signup');
+
+      // Autofocus username
+      setTimeout(() => usernameInput.focus(), 100);
+
+    })();
   </script>
 </body>
 </html>

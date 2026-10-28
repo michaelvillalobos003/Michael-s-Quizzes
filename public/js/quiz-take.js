@@ -16,8 +16,7 @@
   }
 
   // If unauthenticated, redirect to login page
-  if (!currentUser || !Number.isInteger(Number(currentUser.id)) || Number(currentUser.id) < 1) {
-    localStorage.removeItem('quiz_user');
+  if (!currentUser) {
     const returnUrl = encodeURIComponent(window.location.href);
     window.location.href = `/login.html?redirect=${returnUrl}`;
     return;
@@ -64,7 +63,7 @@
 
   // Set User Header
   if (currentUser) {
-    userNameEl.textContent = currentUser.username || 'Player';
+    userNameEl.textContent = currentUser.username || 'Michael';
     userAvatarEl.textContent = (currentUser.username || 'M').charAt(0).toUpperCase();
     userBalanceEl.textContent = `$${currentUser.balance || 0}`;
     fetchLatestBalance();

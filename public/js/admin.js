@@ -3,20 +3,20 @@
 (function () {
   'use strict';
 
-  // Teacher tools require an explicit sign-in.
+  // Role State (default to teacher for Michael)
+  let activeRole = 'teacher';
+  let currentUser = { id: 1, username: 'Michael', role: 'teacher' };
+
   const stored = localStorage.getItem('quiz_user');
-  let currentUser = null;
-  try {
-    currentUser = stored ? JSON.parse(stored) : null;
-  } catch {
-    localStorage.removeItem('quiz_user');
+  if (stored) {
+    try {
+      const u = JSON.parse(stored);
+      currentUser = { ...currentUser, ...u };
+      activeRole = currentUser.role || 'teacher';
+    } catch (e) {
+      console.warn('Could not parse user', e);
+    }
   }
-  if (!currentUser || !Number.isInteger(Number(currentUser.id)) || Number(currentUser.id) < 1) {
-    localStorage.removeItem('quiz_user');
-    window.location.replace(`/login.html?redirect=${encodeURIComponent(window.location.href)}`);
-    return;
-  }
-  let activeRole = currentUser.role || 'student';
 
   // DOM Elements
   const roleSwitcher = document.getElementById('role-switcher');
@@ -88,7 +88,7 @@
   function getHeaders() {
     return {
       'Content-Type': 'application/json',
-      'x-user-id': String(currentUser.id),
+      'x-user-id': String(currentUser.id || 1),
       'x-user-role': activeRole
     };
   }

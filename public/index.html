@@ -60,25 +60,24 @@
       <!-- Right Profile Pill -->
       <div class="flex items-center gap-3">
         <!-- Live Streak Counter -->
-        <div id="nav-streak-pill" class="hidden flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-extrabold shadow-sm">
+        <div id="nav-streak-pill" class="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-extrabold shadow-sm">
           <span>🔥</span>
           <span id="nav-streak-count">1</span>
           <span class="hidden sm:inline">Day Streak</span>
         </div>
 
         <!-- Live Balance Counter -->
-        <div id="nav-balance-pill" class="hidden flex items-center gap-1.5 px-3.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black shadow-sm">
+        <div class="flex items-center gap-1.5 px-3.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black shadow-sm">
           <span>💰</span>
           <span id="nav-balance-val">$0</span>
         </div>
 
-        <!-- User Chip -->
-        <div class="hidden sm:flex items-center gap-2 pl-1 text-xs text-slate-300">
-          <span class="w-7 h-7 rounded-lg bg-indigo-600 font-bold flex items-center justify-center text-white" id="header-avatar">G</span>
-          <span id="header-username" class="font-semibold text-slate-200">Guest</span>
-        </div>
-        <a id="sign-up-link" href="/login.html" class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">Sign Up</a>
-        <button id="sign-out-button" type="button" class="hidden px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold">Sign Out</button>
+        <!-- User Chip / Account Switcher -->
+        <a href="/login.html" class="flex items-center gap-2 pl-1 text-xs text-slate-300 hover:text-white group p-1 rounded-xl hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-700" title="Click to Sign Up or Switch Player">
+          <span class="w-7 h-7 rounded-lg bg-indigo-600 group-hover:bg-indigo-500 font-bold flex items-center justify-center text-white transition-colors" id="header-avatar">M</span>
+          <span id="header-username" class="font-semibold text-slate-200 group-hover:text-white">Michael</span>
+          <span class="text-[10px] text-slate-500 group-hover:text-indigo-400 font-bold">⇄</span>
+        </a>
       </div>
     </div>
   </header>
@@ -100,7 +99,7 @@
             <span class="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 tracking-wider">
               Season 1 Live
             </span>
-            <span id="hero-streak-badge" class="hidden px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+            <span id="hero-streak-badge" class="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
               <span>🔥</span>
               <span id="hero-streak-text">1 Day Streak</span>
             </span>
@@ -108,15 +107,15 @@
 
           <div>
             <h1 class="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
-              <span id="hero-greeting-prefix">Welcome,</span> <span id="hero-greeting-name" class="bg-gradient-to-r from-indigo-400 via-cyan-300 to-white bg-clip-text text-transparent">Guest</span>! 🚀
+              Welcome back, <span id="hero-greeting-name" class="bg-gradient-to-r from-indigo-400 via-cyan-300 to-white bg-clip-text text-transparent">Michael</span>! 🚀
             </h1>
             <p class="text-slate-400 text-xs sm:text-sm mt-1.5 max-w-xl leading-relaxed">
-              Browse quizzes across video games, superhero lore, pop beats, and snack trivia. Sign in to track scores, streaks, and rewards.
+              Test your knowledge across video games, superhero lore, pop beats, and snack trivia. Earn virtual cash for every correct answer, stack streaks, and climb the leaderboard!
             </p>
           </div>
 
           <!-- Hero Balance Box -->
-          <div id="hero-balance-card" class="hidden inline-flex items-center gap-3 p-3 sm:p-4 rounded-2xl bg-slate-950/60 border border-slate-800">
+          <div class="inline-flex items-center gap-3 p-3 sm:p-4 rounded-2xl bg-slate-950/60 border border-slate-800">
             <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl font-black">
               💰
             </div>
@@ -153,7 +152,7 @@
       </div>
 
       <!-- 2. CLAIM DAILY BONUS WIDGET (Span 4) -->
-      <div id="daily-bonus-card" class="hidden bento-card md:col-span-4 rounded-3xl p-6 sm:p-7 flex flex-col justify-between relative overflow-hidden">
+      <div class="bento-card md:col-span-4 rounded-3xl p-6 sm:p-7 flex flex-col justify-between relative overflow-hidden">
         <div class="absolute -right-12 -bottom-12 w-48 h-48 bg-cyan-600/10 rounded-full blur-2xl pointer-events-none"></div>
 
         <div class="space-y-3 relative z-10">
@@ -252,7 +251,7 @@
       </div>
 
       <!-- 4. QUICK STATS MATRIX CARD (Span 3) -->
-      <div id="quick-stats-card" class="hidden bento-card md:col-span-3 rounded-3xl p-6 sm:p-7 flex flex-col justify-between relative overflow-hidden">
+      <div class="bento-card md:col-span-3 rounded-3xl p-6 sm:p-7 flex flex-col justify-between relative overflow-hidden">
         <div class="space-y-3 relative z-10">
           <div class="flex items-center justify-between">
             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-violet-500/20 text-violet-300 border border-violet-500/30">
@@ -290,7 +289,7 @@
       </div>
 
       <!-- 5. JUMP BACK IN / RECENT ACTIVITY CARD (Span 3) -->
-      <div id="recent-activity-card" class="hidden bento-card md:col-span-3 rounded-3xl p-6 sm:p-7 flex flex-col justify-between relative overflow-hidden">
+      <div class="bento-card md:col-span-3 rounded-3xl p-6 sm:p-7 flex flex-col justify-between relative overflow-hidden">
         <div class="space-y-3 relative z-10">
           <div class="flex items-center justify-between">
             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">

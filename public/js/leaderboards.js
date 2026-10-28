@@ -5,19 +5,9 @@
 
   // Current User Header
   const storedUser = localStorage.getItem('quiz_user');
-  let currentUser = null;
-  try {
-    const parsedUser = storedUser ? JSON.parse(storedUser) : null;
-    if (parsedUser && Number.isInteger(Number(parsedUser.id)) && Number(parsedUser.id) > 0) {
-      currentUser = parsedUser;
-    } else if (storedUser) {
-      localStorage.removeItem('quiz_user');
-    }
-  } catch {
-    localStorage.removeItem('quiz_user');
-  }
+  let currentUser = storedUser ? JSON.parse(storedUser) : { id: 1, username: 'Michael', balance: 850 };
   const headerBalanceEl = document.getElementById('header-balance');
-  if (headerBalanceEl) headerBalanceEl.textContent = currentUser ? `$${currentUser.balance || 0}` : '—';
+  if (headerBalanceEl) headerBalanceEl.textContent = `$${currentUser.balance || 0}`;
 
   // Tabs
   const tabBalanceBtn = document.getElementById('tab-balance-btn');
@@ -111,7 +101,7 @@
 
       rows.forEach(user => {
         const tr = document.createElement('tr');
-        const isMe = currentUser && Number(user.user_id) === Number(currentUser.id);
+        const isMe = user.user_id === currentUser.id;
         tr.className = `hover:bg-slate-800/40 transition-colors ${isMe ? 'bg-indigo-950/20 font-semibold' : ''}`;
 
         const roleBadge = user.role === 'teacher'
@@ -162,7 +152,7 @@
 
       rows.forEach(user => {
         const tr = document.createElement('tr');
-        const isMe = currentUser && Number(user.user_id) === Number(currentUser.id);
+        const isMe = user.user_id === currentUser.id;
         tr.className = `hover:bg-slate-800/40 transition-colors ${isMe ? 'bg-indigo-950/20 font-semibold' : ''}`;
 
         tr.innerHTML = `
@@ -270,7 +260,7 @@
 
       rows.forEach(user => {
         const tr = document.createElement('tr');
-        const isMe = currentUser && Number(user.user_id) === Number(currentUser.id);
+        const isMe = user.user_id === currentUser.id;
         tr.className = `hover:bg-slate-800/40 transition-colors ${isMe ? 'bg-indigo-950/20 font-semibold' : ''}`;
 
         tr.innerHTML = `

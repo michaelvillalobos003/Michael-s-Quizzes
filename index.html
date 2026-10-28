@@ -1,18 +1,407 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Michael's Quizzes</title>
-    <meta name="description" content="Interactive quiz and trivia platform with custom quiz creator, category browsing, timed challenges, and detailed performance insights." />
-    <meta property="og:title" content="Michael's Quizzes" />
-    <meta property="og:description" content="Interactive quiz and trivia platform with custom quiz creator, category browsing, timed challenges, and detailed performance insights." />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  </head>
-  <body class="bg-slate-950 text-slate-100 min-h-screen selection:bg-indigo-500 selection:text-white font-['Plus_Jakarta_Sans',sans-serif]">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Michael's Quizzes • Bento Grid Trivia Platform</title>
+  <meta name="description" content="Kid & teen trivia challenge engine. Earn virtual cash, keep your daily streak alive, take the Daily Mega Challenge, and build custom quizzes." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .bento-card {
+      background-color: #1e293b;
+      border: 1px solid #334155;
+      transition: all 0.25s ease;
+    }
+    .bento-card:hover {
+      border-color: #475569;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+
+  <!-- Header Navigation -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="/index.html" class="flex items-center gap-2.5 font-black text-lg tracking-tight text-white group">
+          <span class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center text-white text-lg shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform">
+            ⚡
+          </span>
+          <span class="bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
+            MICHAEL'S QUIZZES
+          </span>
+        </a>
+      </div>
+
+      <!-- Center Nav Links -->
+      <nav class="hidden md:flex items-center gap-1.5 text-xs font-bold text-slate-300">
+        <a href="/index.html" class="px-3 py-1.5 rounded-xl bg-slate-800 text-white transition-colors">
+          Dashboard
+        </a>
+        <a href="/leaderboards.html" class="px-3 py-1.5 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
+          Leaderboards
+        </a>
+        <a href="/history.html" class="px-3 py-1.5 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
+          History
+        </a>
+        <a href="/create-quiz.html" class="px-3 py-1.5 rounded-xl hover:bg-slate-800 hover:text-white transition-colors text-indigo-400">
+          + Create Quiz
+        </a>
+        <a href="/admin.html" class="px-3 py-1.5 rounded-xl hover:bg-slate-800 hover:text-white transition-colors text-amber-400">
+          Teacher Portal
+        </a>
+      </nav>
+
+      <!-- Right Profile Pill -->
+      <div class="flex items-center gap-3">
+        <!-- Live Streak Counter -->
+        <div id="nav-streak-pill" class="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-extrabold shadow-sm">
+          <span>🔥</span>
+          <span id="nav-streak-count">1</span>
+          <span class="hidden sm:inline">Day Streak</span>
+        </div>
+
+        <!-- Live Balance Counter -->
+        <div class="flex items-center gap-1.5 px-3.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black shadow-sm">
+          <span>💰</span>
+          <span id="nav-balance-val">$0</span>
+        </div>
+
+        <!-- User Chip / Account Switcher -->
+        <a href="/login.html" class="flex items-center gap-2 pl-1 text-xs text-slate-300 hover:text-white group p-1 rounded-xl hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-700" title="Click to Sign Up or Switch Player">
+          <span class="w-7 h-7 rounded-lg bg-indigo-600 group-hover:bg-indigo-500 font-bold flex items-center justify-center text-white transition-colors" id="header-avatar">M</span>
+          <span id="header-username" class="font-semibold text-slate-200 group-hover:text-white">Michael</span>
+          <span class="text-[10px] text-slate-500 group-hover:text-indigo-400 font-bold">⇄</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Bento Dashboard Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-8 space-y-8">
+
+    <!-- Bento Grid Section -->
+    <section class="grid grid-cols-1 md:grid-cols-12 gap-5">
+
+      <!-- 1. HERO GREETING CARD (Span 8) -->
+      <div class="bento-card md:col-span-8 rounded-3xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden group">
+        <!-- Decorative Glow Ambient -->
+        <div class="absolute -right-16 -top-16 w-64 h-64 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-16 -bottom-16 w-64 h-64 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="space-y-4 relative z-10">
+          <div class="flex flex-wrap items-center gap-2.5">
+            <span class="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 tracking-wider">
+              Season 1 Live
+            </span>
+            <span id="hero-streak-badge" class="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+              <span>🔥</span>
+              <span id="hero-streak-text">1 Day Streak</span>
+            </span>
+          </div>
+
+          <div>
+            <h1 class="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
+              Welcome back, <span id="hero-greeting-name" class="bg-gradient-to-r from-indigo-400 via-cyan-300 to-white bg-clip-text text-transparent">Michael</span>! 🚀
+            </h1>
+            <p class="text-slate-400 text-xs sm:text-sm mt-1.5 max-w-xl leading-relaxed">
+              Test your knowledge across video games, superhero lore, pop beats, and snack trivia. Earn virtual cash for every correct answer, stack streaks, and climb the leaderboard!
+            </p>
+          </div>
+
+          <!-- Hero Balance Box -->
+          <div class="inline-flex items-center gap-3 p-3 sm:p-4 rounded-2xl bg-slate-950/60 border border-slate-800">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl font-black">
+              💰
+            </div>
+            <div>
+              <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Available Cash Balance</div>
+              <div class="text-xl sm:text-2xl font-black text-emerald-400" id="hero-balance-val">$0.00</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CTA Buttons -->
+        <div class="pt-6 relative z-10 flex flex-wrap items-center gap-3">
+          <a
+            href="/quiz-take.html?daily=true"
+            class="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 group-hover:scale-102"
+          >
+            <span>🔥</span>
+            <span>Take Daily Mega Challenge ($650 Max)</span>
+          </a>
+          <a
+            href="/create-quiz.html"
+            class="px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 font-bold text-xs sm:text-sm transition-colors flex items-center gap-2"
+          >
+            <span>✍️</span>
+            <span>Create Quiz</span>
+          </a>
+          <a
+            href="#quizzes-catalog"
+            class="px-4 py-3 rounded-2xl bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 text-xs font-semibold transition-colors"
+          >
+            Browse All Quizzes ↓
+          </a>
+        </div>
+      </div>
+
+      <!-- 2. CLAIM DAILY BONUS WIDGET (Span 4) -->
+      <div class="bento-card md:col-span-4 rounded-3xl p-6 sm:p-7 flex flex-col justify-between relative overflow-hidden">
+        <div class="absolute -right-12 -bottom-12 w-48 h-48 bg-cyan-600/10 rounded-full blur-2xl pointer-events-none"></div>
+
+        <div class="space-y-3 relative z-10">
+          <div class="flex items-center justify-between">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+              Daily Reward
+            </span>
+            <span class="text-xs text-slate-400 font-mono" id="bonus-countdown-label">UTC Midnight</span>
+          </div>
+
+          <div>
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+              <span>🎁 Claim Daily Bonus</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">
+              Log in once every 24 hours to earn free virtual cash and increment your streak!
+            </p>
+          </div>
+
+          <!-- Reward Banner -->
+          <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 flex items-center justify-between">
+            <div>
+              <div class="text-[10px] font-bold text-slate-400 uppercase">Cash Award</div>
+              <div class="text-2xl font-black text-cyan-400">+$50.00</div>
+            </div>
+            <div class="text-right">
+              <div class="text-[10px] font-bold text-slate-400 uppercase">Streak Boost</div>
+              <div class="text-sm font-extrabold text-amber-400">+1 Day 🔥</div>
+            </div>
+          </div>
+
+          <!-- Countdown Display -->
+          <div id="bonus-countdown-box" class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+            <div class="text-[10px] font-bold uppercase text-slate-400">Next Bonus Available In</div>
+            <div class="text-lg font-black font-mono text-cyan-300 tracking-wider" id="bonus-timer-display">--:--:--</div>
+          </div>
+        </div>
+
+        <div class="pt-4 relative z-10">
+          <button
+            id="claim-bonus-btn"
+            class="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-black text-xs sm:text-sm shadow-lg shadow-cyan-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span>🎁</span>
+            <span id="claim-bonus-btn-text">Claim Daily +$50</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. EXCLUSIVE DAILY MEGA CHALLENGE CARD (Span 6) -->
+      <div class="bento-card md:col-span-6 rounded-3xl p-6 sm:p-7 flex flex-col justify-between border-amber-500/30 hover:border-amber-500/60 relative overflow-hidden">
+        <div class="absolute -right-16 -top-16 w-56 h-56 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="space-y-4 relative z-10">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
+                🔥 Exclusive Daily
+              </span>
+              <span class="text-xs text-slate-400 font-medium">10 Questions</span>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              $650 Max Cash Payout
+            </span>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-black text-white flex items-center gap-2 tracking-tight">
+              <span>⚔️ Daily Mega Challenge</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+              High stakes, ultra trivia showdown refreshed daily. Answer correctly to score $50 each, plus an extra $150 jackpot for a flawless 10/10 perfect score!
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+              <span class="text-[10px] text-slate-400 uppercase font-bold block">Correct Choice</span>
+              <span class="text-sm font-black text-emerald-400">+$50 virtual cash</span>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+              <span class="text-[10px] text-slate-400 uppercase font-bold block">10/10 Jackpot Bonus</span>
+              <span class="text-sm font-black text-amber-400">+$150 bonus cash</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-5 relative z-10">
+          <a
+            href="/quiz-take.html?daily=true"
+            class="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
+          >
+            <span>⚔️ Start Daily Mega Challenge</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- 4. QUICK STATS MATRIX CARD (Span 3) -->
+      <div class="bento-card md:col-span-3 rounded-3xl p-6 sm:p-7 flex flex-col justify-between relative overflow-hidden">
+        <div class="space-y-3 relative z-10">
+          <div class="flex items-center justify-between">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-violet-500/20 text-violet-300 border border-violet-500/30">
+              Performance
+            </span>
+            <a href="/leaderboards.html" class="text-[11px] text-indigo-400 hover:underline font-bold">Ranks →</a>
+          </div>
+
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <span>📊 Quick Stats</span>
+          </h3>
+
+          <div class="space-y-2.5 pt-1">
+            <div class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+              <span class="text-xs text-slate-400 font-medium">Global Rank</span>
+              <span class="text-xs font-black text-amber-400" id="stat-rank-val">#1</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+              <span class="text-xs text-slate-400 font-medium">Completed Quizzes</span>
+              <span class="text-xs font-black text-white" id="stat-completed-val">0</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+              <span class="text-xs text-slate-400 font-medium">Accuracy Rate</span>
+              <span class="text-xs font-black text-cyan-400" id="stat-accuracy-val">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-4 relative z-10">
+          <a href="/history.html" class="text-xs font-bold text-slate-400 hover:text-white flex items-center justify-center gap-1 transition-colors">
+            <span>View Full History</span>
+            <span>→</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- 5. JUMP BACK IN / RECENT ACTIVITY CARD (Span 3) -->
+      <div class="bento-card md:col-span-3 rounded-3xl p-6 sm:p-7 flex flex-col justify-between relative overflow-hidden">
+        <div class="space-y-3 relative z-10">
+          <div class="flex items-center justify-between">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              Activity
+            </span>
+            <span class="text-[10px] text-slate-500 font-mono" id="recent-date-label">Latest</span>
+          </div>
+
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <span>🎯 Jump Back In</span>
+          </h3>
+
+          <div id="recent-activity-container" class="space-y-2 pt-1">
+            <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-xs space-y-1">
+              <div class="font-bold text-white truncate" id="recent-quiz-title">Loading recent activity...</div>
+              <div class="flex items-center justify-between text-slate-400 text-[11px]">
+                <span id="recent-quiz-score">Score: --</span>
+                <span class="text-emerald-400 font-bold" id="recent-quiz-cash">+$0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-4 relative z-10">
+          <a
+            id="recent-activity-btn"
+            href="/history.html"
+            class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold text-center block transition-colors"
+          >
+            Review Attempt Answers
+          </a>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Quiz Catalog Showcase Section -->
+    <section id="quizzes-catalog" class="space-y-6 pt-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div>
+          <div class="flex items-center gap-2 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-1">
+            <span>🎮 Trivia Arena</span>
+          </div>
+          <h2 class="text-2xl font-black text-white tracking-tight">
+            Kid & Teen Quizzes Catalog
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">
+            10 questions each • $10 per correct answer + $25 perfect score bonus!
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <a
+            href="/create-quiz.html"
+            class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/30 transition-all flex items-center gap-1.5"
+          >
+            <span>+</span>
+            <span>Create Student Quiz</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none" id="category-filter-pills">
+        <button class="cat-pill active px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition-all" data-category="ALL">
+          All Quizzes
+        </button>
+        <button class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-all" data-category="Gaming">
+          🎮 Gaming
+        </button>
+        <button class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-all" data-category="Comics">
+          🦸 Comics
+        </button>
+        <button class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-all" data-category="Movies">
+          🎬 Movies
+        </button>
+        <button class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-all" data-category="Pop Culture">
+          🔥 Pop Culture
+        </button>
+        <button class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-all" data-category="Snacks">
+          🍿 Snack Lore
+        </button>
+      </div>
+
+      <!-- Quizzes Loading State -->
+      <div id="quizzes-loading" class="text-center py-16">
+        <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+        <p class="text-slate-400 text-xs font-medium">Loading trivia catalog...</p>
+      </div>
+
+      <!-- Quizzes Cards Grid -->
+      <div id="quizzes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Injected dynamically via home.js -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 bg-slate-950 py-8 text-center text-xs text-slate-500">
+    <div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p>© 2026 Michael's Quizzes • Built for kids & teens with virtual cash rewards.</p>
+      <div class="flex items-center gap-4">
+        <a href="/index.html" class="hover:text-slate-300 transition-colors">Home</a>
+        <a href="/leaderboards.html" class="hover:text-slate-300 transition-colors">Leaderboards</a>
+        <a href="/history.html" class="hover:text-slate-300 transition-colors">History</a>
+        <a href="/create-quiz.html" class="hover:text-slate-300 transition-colors">Creator</a>
+        <a href="/admin.html" class="hover:text-slate-300 transition-colors">Teacher Portal</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/home.js"></script>
+</body>
 </html>
