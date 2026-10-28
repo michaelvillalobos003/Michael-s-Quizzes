@@ -217,11 +217,12 @@ router.post('/claim-daily-bonus', async (req, res) => {
   }
 });
 
-// POST /api/users/signup - Register a new user with username and gmail
+// POST /api/users/signup - Register a new user with username, gmail, and password
 router.post('/signup', async (req, res) => {
-  const { username, email, gmail, role } = req.body;
+  const { username, email, gmail, password, role } = req.body;
   const rawUsername = (username || '').trim();
   let rawEmail = (gmail || email || '').trim();
+  const rawPassword = (password || '').trim();
 
   if (!rawUsername) {
     return res.status(400).json({ success: false, error: 'Please enter your username.' });
@@ -233,6 +234,14 @@ router.post('/signup', async (req, res) => {
 
   if (!rawEmail) {
     return res.status(400).json({ success: false, error: 'Please enter your Gmail address.' });
+  }
+
+  if (!rawPassword) {
+    return res.status(400).json({ success: false, error: 'Please enter a password for your account.' });
+  }
+
+  if (rawPassword.length < 4) {
+    return res.status(400).json({ success: false, error: 'Password must be at least 4 characters long.' });
   }
 
   // Normalize gmail format if missing @
@@ -248,29 +257,37 @@ router.post('/signup', async (req, res) => {
     if (db.isPostgres()) {
       const pool = db.getPool();
       const existing = await pool.query(
-        'SELECT id, username, email, role, balance, streak_count FROM users WHERE LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($2)',
+        'SELECT id, username, email, password, role, balance, streak_count FROM users WHERE LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($2)',
         [cleanUsername, cleanEmail]
       );
 
       if (existing.rows.length > 0) {
-        // Return existing user smoothly
-        return res.json({
-          success: true,
-          user: existing.rows[0],
-          isNew: false,
-          message: `Welcome back, ${existing.rows[0].username}!`
+        const u = existing.rows[0];
+        // If password matches existing, sign them in
+        if (!u.password || u.password === rawPassword) {
+          const { password: _p, ...safeUser } = u;
+          return res.json({
+            success: true,
+            user: safeUser,
+            isNew: false,
+            message: `Welcome back, ${u.username}! Signed in successfully.`
+          });
+        }
+        return res.status(409).json({
+          success: false,
+          error: 'This username or Gmail is already registered. Please sign in with your password.'
         });
       }
 
       const insertRes = await pool.query(
-        'INSERT INTO users (username, email, role, balance, streak_count) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, email, role, balance, streak_count',
-        [cleanUsername, cleanEmail, assignedRole, 100, 1]
+        'INSERT INTO users (username, email, password, role, balance, streak_count) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, username, email, role, balance, streak_count',
+        [cleanUsername, cleanEmail, rawPassword, assignedRole, 100, 1]
       );
       return res.status(201).json({
         success: true,
         user: insertRes.rows[0],
         isNew: true,
-        message: 'Account created! Welcome to Michael\'s Quizzes.'
+        message: '🎉 Account created! Welcome to Michael\'s Quizzes ($100 starting cash added).'
       });
     } else {
       let existingUser = memStore.users.find(
@@ -279,11 +296,18 @@ router.post('/signup', async (req, res) => {
       );
 
       if (existingUser) {
-        return res.json({
-          success: true,
-          user: existingUser,
-          isNew: false,
-          message: `Welcome back, ${existingUser.username}!`
+        if (!existingUser.password || existingUser.password === rawPassword) {
+          const { password: _p, ...safeUser } = existingUser;
+          return res.json({
+            success: true,
+            user: safeUser,
+            isNew: false,
+            message: `Welcome back, ${existingUser.username}! Signed in successfully.`
+          });
+        }
+        return res.status(409).json({
+          success: false,
+          error: 'This username or Gmail is already registered. Please sign in with your password.'
         });
       }
 
@@ -291,6 +315,7 @@ router.post('/signup', async (req, res) => {
         id: memStore.counters.users++,
         username: cleanUsername,
         email: cleanEmail,
+        password: rawPassword,
         role: assignedRole,
         balance: 100,
         streak_count: 1,
@@ -299,27 +324,33 @@ router.post('/signup', async (req, res) => {
       };
       memStore.users.push(newUser);
 
+      const { password: _p, ...safeUser } = newUser;
       return res.status(201).json({
         success: true,
-        user: newUser,
+        user: safeUser,
         isNew: true,
-        message: 'Account created! Welcome to Michael\'s Quizzes.'
+        message: '🎉 Account created! Welcome to Michael\'s Quizzes ($100 starting cash added).'
       });
     }
   } catch (err) {
     console.error('Signup error:', err);
-    res.status(500).json({ success: false, error: 'Server error during sign up.' });
+    res.status(500).json({ success: false, error: 'Server error during sign up. Please try again.' });
   }
 });
 
-// POST /api/users/login - Simple login or switch user by username and gmail
+// POST /api/users/login - Sign in with username/gmail and password
 router.post('/login', async (req, res) => {
-  const { username, email, gmail } = req.body;
+  const { username, email, gmail, password } = req.body;
   const rawUsername = (username || '').trim();
   let rawEmail = (gmail || email || '').trim();
+  const rawPassword = (password || '').trim();
 
   if (!rawUsername && !rawEmail) {
     return res.status(400).json({ success: false, error: 'Please enter your username or Gmail.' });
+  }
+
+  if (!rawPassword) {
+    return res.status(400).json({ success: false, error: 'Please enter your password.' });
   }
 
   // Normalize gmail format if missing @
@@ -327,48 +358,54 @@ router.post('/login', async (req, res) => {
     rawEmail = `${rawEmail.toLowerCase()}@gmail.com`;
   }
 
-  const cleanUsername = rawUsername || (rawEmail ? rawEmail.split('@')[0] : 'Player');
-  const cleanEmail = rawEmail.toLowerCase() || `${cleanUsername.toLowerCase()}@gmail.com`;
+  const cleanUsername = rawUsername;
+  const cleanEmail = rawEmail ? rawEmail.toLowerCase() : '';
 
   try {
     if (db.isPostgres()) {
       const pool = db.getPool();
       let userRes = await pool.query(
-        'SELECT id, username, email, role, balance, streak_count FROM users WHERE LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($2)',
+        'SELECT id, username, email, password, role, balance, streak_count FROM users WHERE (length($1) > 0 AND LOWER(username) = LOWER($1)) OR (length($2) > 0 AND LOWER(email) = LOWER($2))',
         [cleanUsername, cleanEmail]
       );
+
       if (userRes.rows.length === 0) {
-        // Auto-create on login if doesn't exist yet
-        userRes = await pool.query(
-          'INSERT INTO users (username, email, role, balance, streak_count) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, email, role, balance, streak_count',
-          [cleanUsername, cleanEmail, 'student', 100, 1]
-        );
+        return res.status(404).json({
+          success: false,
+          error: 'Account not found. Please check your credentials or click "Sign Up" to create a new account.'
+        });
       }
-      return res.json({ success: true, user: userRes.rows[0] });
+
+      const user = userRes.rows[0];
+      if (user.password && user.password !== rawPassword) {
+        return res.status(401).json({ success: false, error: 'Incorrect password. Please try again.' });
+      }
+
+      const { password: _p, ...safeUser } = user;
+      return res.json({ success: true, user: safeUser, message: 'Signed in successfully!' });
     } else {
       let user = memStore.users.find(
-        u => (rawUsername && u.username.toLowerCase() === rawUsername.toLowerCase()) ||
-             (rawEmail && u.email && u.email.toLowerCase() === rawEmail.toLowerCase())
+        u => (cleanUsername && u.username.toLowerCase() === cleanUsername.toLowerCase()) ||
+             (cleanEmail && u.email && u.email.toLowerCase() === cleanEmail.toLowerCase())
       );
 
       if (!user) {
-        user = {
-          id: memStore.counters.users++,
-          username: cleanUsername,
-          email: cleanEmail,
-          role: 'student',
-          balance: 100,
-          streak_count: 1,
-          last_daily_bonus_claimed: null,
-          created_at: new Date()
-        };
-        memStore.users.push(user);
+        return res.status(404).json({
+          success: false,
+          error: 'Account not found. Please check your credentials or click "Sign Up" to create a new account.'
+        });
       }
-      return res.json({ success: true, user });
+
+      if (user.password && user.password !== rawPassword) {
+        return res.status(401).json({ success: false, error: 'Incorrect password. Please try again.' });
+      }
+
+      const { password: _p, ...safeUser } = user;
+      return res.json({ success: true, user: safeUser, message: 'Signed in successfully!' });
     }
   } catch (err) {
     console.error('Login error:', err);
-    res.status(500).json({ success: false, error: 'Server error during login' });
+    res.status(500).json({ success: false, error: 'Server error during login. Please try again.' });
   }
 });
 

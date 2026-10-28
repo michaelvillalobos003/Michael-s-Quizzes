@@ -14,6 +14,7 @@ export const memStore = {
       id: 1,
       username: 'Michael',
       email: 'michaelvilla0031@gmail.com',
+      password: 'password123',
       role: 'teacher',
       balance: 850,
       streak_count: 4,
@@ -23,41 +24,56 @@ export const memStore = {
     {
       id: 2,
       username: 'PixelGamer99',
-      email: 'pixel@example.com',
+      email: 'pixel@gmail.com',
+      password: 'password123',
       role: 'student',
       balance: 520,
+      streak_count: 2,
+      last_daily_bonus_claimed: null,
       created_at: new Date(Date.now() - 86400000 * 4)
     },
     {
       id: 3,
       username: 'TriviaQueen',
-      email: 'queen@example.com',
+      email: 'queen@gmail.com',
+      password: 'password123',
       role: 'student',
       balance: 480,
+      streak_count: 1,
+      last_daily_bonus_claimed: null,
       created_at: new Date(Date.now() - 86400000 * 3)
     },
     {
       id: 4,
       username: 'NeoCoder',
-      email: 'neo@example.com',
+      email: 'neo@gmail.com',
+      password: 'password123',
       role: 'student',
       balance: 350,
+      streak_count: 1,
+      last_daily_bonus_claimed: null,
       created_at: new Date(Date.now() - 86400000 * 2)
     },
     {
       id: 5,
       username: 'SpeedRunnerX',
-      email: 'speed@example.com',
+      email: 'speed@gmail.com',
+      password: 'password123',
       role: 'student',
       balance: 290,
+      streak_count: 1,
+      last_daily_bonus_claimed: null,
       created_at: new Date(Date.now() - 86400000 * 2)
     },
     {
       id: 6,
       username: 'BlockMaster',
-      email: 'block@example.com',
+      email: 'block@gmail.com',
+      password: 'password123',
       role: 'student',
       balance: 210,
+      streak_count: 1,
+      last_daily_bonus_claimed: null,
       created_at: new Date(Date.now() - 86400000 * 1)
     }
   ],
@@ -120,9 +136,17 @@ async function initPostgresTables() {
         id SERIAL PRIMARY KEY,
         username VARCHAR(100) NOT NULL UNIQUE,
         email VARCHAR(255) NOT NULL UNIQUE,
-        balance NUMERIC DEFAULT 0,
+        password VARCHAR(255) DEFAULT 'password123',
+        role VARCHAR(50) DEFAULT 'student',
+        streak_count INTEGER DEFAULT 1,
+        last_daily_bonus_claimed TIMESTAMP,
+        balance NUMERIC DEFAULT 100,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS password VARCHAR(255) DEFAULT 'password123';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'student';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS streak_count INTEGER DEFAULT 1;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS last_daily_bonus_claimed TIMESTAMP;
 
       CREATE TABLE IF NOT EXISTS quizzes (
         id SERIAL PRIMARY KEY,

@@ -44,7 +44,7 @@
       </div>
       <h1 id="auth-title" class="text-2xl font-black text-white tracking-tight">Create Your Account</h1>
       <p id="auth-subtitle" class="text-slate-400 text-xs mt-1.5 leading-relaxed">
-        Join Michael's Quizzes with your username and Gmail to earn $100 starting cash!
+        Choose your username, Gmail, and password to start with $100 virtual cash!
       </p>
     </div>
 
@@ -84,16 +84,16 @@
         <label for="username-input" class="block text-xs font-bold text-slate-300 mb-1.5 flex items-center justify-between">
           <span class="flex items-center gap-1.5">
             <span>👤</span>
-            <span>Your Username</span>
+            <span id="username-label">Your Username</span>
           </span>
-          <span class="text-[10px] text-slate-500 font-normal">Leaderboard Display Name</span>
+          <span id="username-sublabel" class="text-[10px] text-slate-500 font-normal">Displayed on leaderboards</span>
         </label>
         <div class="relative">
           <input
             type="text"
             id="username-input"
             required
-            placeholder="Enter your username (e.g. TriviaMaster)"
+            placeholder="Choose your username (e.g. TriviaMaster)"
             autocomplete="username"
             class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium"
           />
@@ -101,7 +101,7 @@
       </div>
 
       <!-- Field 2: Your Gmail -->
-      <div>
+      <div id="gmail-field-group">
         <label for="email-input" class="block text-xs font-bold text-slate-300 mb-1.5 flex items-center justify-between">
           <span class="flex items-center gap-1.5">
             <span>📧</span>
@@ -128,6 +128,63 @@
             class="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 bg-indigo-950/60 hover:bg-indigo-900/60 px-2 py-0.5 rounded-lg border border-indigo-800/50 transition-colors"
           >
             + Auto-fill @gmail.com
+          </button>
+        </div>
+      </div>
+
+      <!-- Field 3: Your Password -->
+      <div>
+        <label for="password-input" class="block text-xs font-bold text-slate-300 mb-1.5 flex items-center justify-between">
+          <span class="flex items-center gap-1.5">
+            <span>🔒</span>
+            <span>Your Password</span>
+          </span>
+          <span class="text-[10px] text-slate-500 font-normal">Min 4 characters</span>
+        </label>
+        <div class="relative">
+          <input
+            type="password"
+            id="password-input"
+            required
+            placeholder="Enter your password"
+            autocomplete="current-password"
+            class="w-full pl-4 pr-10 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium"
+          />
+          <button
+            type="button"
+            id="toggle-password-btn"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs p-1"
+            title="Show / Hide Password"
+          >
+            👁️
+          </button>
+        </div>
+      </div>
+
+      <!-- Field 4: Confirm Password (Only shown on Sign Up) -->
+      <div id="confirm-password-group">
+        <label for="confirm-password-input" class="block text-xs font-bold text-slate-300 mb-1.5 flex items-center justify-between">
+          <span class="flex items-center gap-1.5">
+            <span>🔐</span>
+            <span>Confirm Password</span>
+          </span>
+          <span class="text-[10px] text-slate-500 font-normal">Re-enter password</span>
+        </label>
+        <div class="relative">
+          <input
+            type="password"
+            id="confirm-password-input"
+            placeholder="Re-enter your password"
+            autocomplete="new-password"
+            class="w-full pl-4 pr-10 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium"
+          />
+          <button
+            type="button"
+            id="toggle-confirm-password-btn"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs p-1"
+            title="Show / Hide Password"
+          >
+            👁️
           </button>
         </div>
       </div>
@@ -216,9 +273,22 @@
       const authTitle = document.getElementById('auth-title');
       const authSubtitle = document.getElementById('auth-subtitle');
       const authForm = document.getElementById('auth-form');
+
+      const usernameLabel = document.getElementById('username-label');
+      const usernameSublabel = document.getElementById('username-sublabel');
       const usernameInput = document.getElementById('username-input');
+
+      const gmailFieldGroup = document.getElementById('gmail-field-group');
       const emailInput = document.getElementById('email-input');
       const appendGmailBtn = document.getElementById('append-gmail-btn');
+
+      const passwordInput = document.getElementById('password-input');
+      const togglePasswordBtn = document.getElementById('toggle-password-btn');
+
+      const confirmPasswordGroup = document.getElementById('confirm-password-group');
+      const confirmPasswordInput = document.getElementById('confirm-password-input');
+      const toggleConfirmPasswordBtn = document.getElementById('toggle-confirm-password-btn');
+
       const starterPerk = document.getElementById('starter-perk');
       const submitBtn = document.getElementById('submit-btn');
       const submitIcon = document.getElementById('submit-icon');
@@ -251,8 +321,19 @@
           tabSignin.classList.remove('active', 'bg-indigo-600', 'text-white');
           tabSignin.classList.add('text-slate-400');
 
-          authTitle.textContent = 'Create Your Player Account';
-          authSubtitle.textContent = 'Enter your username and your Gmail to start with $100 starting cash!';
+          authTitle.textContent = 'Create Your Account';
+          authSubtitle.textContent = 'Enter your username, Gmail, and password to start with $100 starting cash!';
+          
+          usernameLabel.textContent = 'Your Username';
+          usernameSublabel.textContent = 'Displayed on leaderboards';
+          usernameInput.placeholder = 'Choose your username (e.g. TriviaMaster)';
+
+          gmailFieldGroup.classList.remove('hidden');
+          emailInput.required = true;
+
+          confirmPasswordGroup.classList.remove('hidden');
+          confirmPasswordInput.required = true;
+
           starterPerk.classList.remove('hidden');
 
           submitIcon.textContent = '✨';
@@ -265,7 +346,18 @@
           tabSignup.classList.add('text-slate-400');
 
           authTitle.textContent = 'Welcome Back Player';
-          authSubtitle.textContent = 'Sign in with your username and Gmail to resume your streak and cash balance.';
+          authSubtitle.textContent = 'Sign in with your username/Gmail and password to resume your streak and cash balance.';
+
+          usernameLabel.textContent = 'Your Username or Gmail';
+          usernameSublabel.textContent = 'Enter username or @gmail.com';
+          usernameInput.placeholder = 'Your username or user@gmail.com';
+
+          gmailFieldGroup.classList.add('hidden');
+          emailInput.required = false;
+
+          confirmPasswordGroup.classList.add('hidden');
+          confirmPasswordInput.required = false;
+
           starterPerk.classList.add('hidden');
 
           submitIcon.textContent = '🔑';
@@ -291,6 +383,19 @@
       }
 
       feedbackClose.addEventListener('click', hideFeedback);
+
+      // Password visibility toggles
+      togglePasswordBtn.addEventListener('click', () => {
+        const isPassword = passwordInput.type === 'password';
+        passwordInput.type = isPassword ? 'text' : 'password';
+        togglePasswordBtn.textContent = isPassword ? '🙈' : '👁️';
+      });
+
+      toggleConfirmPasswordBtn.addEventListener('click', () => {
+        const isPassword = confirmPasswordInput.type === 'password';
+        confirmPasswordInput.type = isPassword ? 'text' : 'password';
+        toggleConfirmPasswordBtn.textContent = isPassword ? '🙈' : '👁️';
+      });
 
       // Tab switcher clicks
       tabSignup.addEventListener('click', () => setMode('signup'));
@@ -320,23 +425,76 @@
         return s;
       }
 
+      // Safe JSON parse from fetch response to prevent "Unexpected end of JSON input"
+      async function safeFetchJson(url, options) {
+        const res = await fetch(url, options);
+        const text = await res.text();
+        let data;
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch (e) {
+          throw new Error(`Server returned unexpected response (${res.status} ${res.statusText || 'Error'}). Please try again.`);
+        }
+        return { res, data };
+      }
+
       // Handle Authentication Submission
-      async function handleAuth(username, gmail) {
+      async function handleAuth(username, gmail, password, confirmPassword) {
         hideFeedback();
 
         const cleanUser = username.trim();
         const cleanMail = cleanGmail(gmail);
+        const cleanPass = (password || '').trim();
 
-        if (!cleanUser) {
-          showFeedback('error', 'Please enter your username.');
-          usernameInput.focus();
-          return;
-        }
+        if (currentMode === 'signup') {
+          if (!cleanUser) {
+            showFeedback('error', 'Please enter your username.');
+            usernameInput.focus();
+            return;
+          }
 
-        if (!cleanMail) {
-          showFeedback('error', 'Please enter your Gmail address.');
-          emailInput.focus();
-          return;
+          if (cleanUser.length < 2) {
+            showFeedback('error', 'Username must be at least 2 characters.');
+            usernameInput.focus();
+            return;
+          }
+
+          if (!cleanMail) {
+            showFeedback('error', 'Please enter your Gmail address.');
+            emailInput.focus();
+            return;
+          }
+
+          if (!cleanPass) {
+            showFeedback('error', 'Please enter a password for your account.');
+            passwordInput.focus();
+            return;
+          }
+
+          if (cleanPass.length < 4) {
+            showFeedback('error', 'Password must be at least 4 characters long.');
+            passwordInput.focus();
+            return;
+          }
+
+          if (confirmPassword !== undefined && cleanPass !== confirmPassword.trim()) {
+            showFeedback('error', 'Passwords do not match. Please re-enter your password.');
+            confirmPasswordInput.focus();
+            return;
+          }
+        } else {
+          // Sign in mode
+          if (!cleanUser) {
+            showFeedback('error', 'Please enter your username or Gmail.');
+            usernameInput.focus();
+            return;
+          }
+
+          if (!cleanPass) {
+            showFeedback('error', 'Please enter your password.');
+            passwordInput.focus();
+            return;
+          }
         }
 
         submitBtn.disabled = true;
@@ -344,19 +502,33 @@
         submitLabel.textContent = currentMode === 'signup' ? 'Creating Account...' : 'Signing In...';
 
         try {
-          const endpoint = currentMode === 'signup' ? '/api/users/signup' : '/api/users/login';
-          const res = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          let url;
+          let payload;
+
+          if (currentMode === 'signup') {
+            url = '/api/users/signup';
+            payload = {
               username: cleanUser,
               email: cleanMail,
               gmail: cleanMail,
+              password: cleanPass,
               role: 'student'
-            })
-          });
+            };
+          } else {
+            url = '/api/users/login';
+            payload = {
+              username: cleanUser,
+              email: cleanUser.includes('@') ? cleanUser : '',
+              gmail: cleanUser.includes('@') ? cleanUser : '',
+              password: cleanPass
+            };
+          }
 
-          const data = await res.json();
+          const { res, data } = await safeFetchJson(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
 
           if (!res.ok || !data.success || !data.user) {
             throw new Error(data.error || 'Authentication failed. Please check your credentials.');
@@ -369,7 +541,7 @@
 
           setTimeout(() => {
             window.location.href = returnUrl;
-          }, 800);
+          }, 700);
 
         } catch (err) {
           showFeedback('error', err.message);
@@ -383,20 +555,24 @@
         e.preventDefault();
         const u = usernameInput.value;
         const em = emailInput.value;
-        handleAuth(u, em);
+        const p = passwordInput.value;
+        const cp = confirmPasswordInput.value;
+        handleAuth(u, em, p, cp);
       });
 
-      // Quick Demo logins
+      // Quick Demo logins (fills password and signs in)
       demoMichaelBtn.addEventListener('click', () => {
+        setMode('signin');
         usernameInput.value = 'Michael';
-        emailInput.value = 'michaelvilla0031@gmail.com';
-        handleAuth('Michael', 'michaelvilla0031@gmail.com');
+        passwordInput.value = 'password123';
+        handleAuth('Michael', 'michaelvilla0031@gmail.com', 'password123');
       });
 
       demoStudentBtn.addEventListener('click', () => {
+        setMode('signin');
         usernameInput.value = 'PixelGamer99';
-        emailInput.value = 'pixel@gmail.com';
-        handleAuth('PixelGamer99', 'pixel@gmail.com');
+        passwordInput.value = 'password123';
+        handleAuth('PixelGamer99', 'pixel@gmail.com', 'password123');
       });
 
       // Initialize mode
